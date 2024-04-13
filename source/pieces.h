@@ -1,13 +1,24 @@
 typedef struct Tile {
-	int xPos;
-	int yPos;
+	int xPosition;
+	int yPosition;
+	float realYPosition;
 	float velocity;
-	char color[6]; // Hex representation of color
+	char* color; // Hex representation of color
 } Tile;
 
 
 typedef struct Tetrimino {
 	char shape;
-	char color[6];
+	int xPosition;
+	int yPosition;
+	float velocity;
+	char* color;
 	Tile tiles[4];
 } Tetrimino;
+
+
+void moveTileButtonPress(Tile* tile, u16 buttonsDown);
+
+void initializeTetriminoTiles(Tetrimino* tetrimino);
+
+void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown);
