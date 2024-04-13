@@ -9,8 +9,9 @@
 
 #include "pieces.h"
 
-static u32 *xfb;
+static u32 *xfb; // SCREEN BOUNDS ARE 240x320
 static GXRModeObj *rmode;
+static u32 backgroundColor;
 //WPAD_BUTTON_2=0x0001
 //WPAD_BUTTON_1=0x0002
 //WPAD_BUTTON_B=0x0004
@@ -42,6 +43,20 @@ void initializeGraphics() {
 	VIDEO_Flush();
 	VIDEO_WaitVSync();
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
+}
+
+
+void drawSquare(int startX, int startY, int squareSize, u32 color) {
+	for (int y = startY; y < startY + squareSize; y++) {
+		for (int x = startX; x < startX + squareSize; x++) {
+			// Calculate the framebuffer index for this pixel
+			int index = y * rmode->fbWidth + x;
+
+			// Set the pixel color (red in this example)
+			xfb[index] = color; // RGB value for red
+		}
+	}
+	
 }
 
 
@@ -89,72 +104,72 @@ void initializeGraphics() {
 void initializeTetrimino(Tetrimino* tetrimino) {
 	switch(tetrimino->shape) {
 		case 'I':
-			tetrimino -> color = "00aae5";
-			tetrimino->tiles[0] = (Tile){-1, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[1] = (Tile){0, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[2] = (Tile){1, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[3] = (Tile){2, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->xPosition = -1;
+			tetrimino -> color = I_COLOR;
+			tetrimino->tiles[0] = (Tile){3, 0, 0, tetrimino->velocity, I_COLOR};
+			tetrimino->tiles[1] = (Tile){4, 0, 0, tetrimino->velocity, I_COLOR};
+			tetrimino->tiles[2] = (Tile){5, 0, 0, tetrimino->velocity, I_COLOR};
+			tetrimino->tiles[3] = (Tile){6, 0, 0, tetrimino->velocity, I_COLOR};
+			tetrimino->xPosition = 3;
 			tetrimino->yPosition = 0;
 			break;
 		
 		case 'L':
-			tetrimino -> color = "ff7d00";
-			tetrimino->tiles[0] = (Tile){-1, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[1] = (Tile){0, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[2] = (Tile){1, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[3] = (Tile){1, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->xPosition = -1;
+			tetrimino -> color = L_COLOR;
+			tetrimino->tiles[0] = (Tile){3, 1, 0, tetrimino->velocity, L_COLOR};
+			tetrimino->tiles[1] = (Tile){4, 1, 0, tetrimino->velocity, L_COLOR};
+			tetrimino->tiles[2] = (Tile){5, 1, 0, tetrimino->velocity, L_COLOR};
+			tetrimino->tiles[3] = (Tile){5, 0, 0, tetrimino->velocity, L_COLOR};
+			tetrimino->xPosition = 3;
 			tetrimino->yPosition = 1;
 			break;
 		
 		case 'O':
-			tetrimino -> color = "ffe141";
-			tetrimino->tiles[0] = (Tile){0, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[1] = (Tile){0, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[2] = (Tile){1, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[3] = (Tile){1, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->xPosition = 0;
+			tetrimino -> color = O_COLOR;
+			tetrimino->tiles[0] = (Tile){4, 1, 0, tetrimino->velocity, O_COLOR};
+			tetrimino->tiles[1] = (Tile){4, 0, 0, tetrimino->velocity, O_COLOR};
+			tetrimino->tiles[2] = (Tile){5, 1, 0, tetrimino->velocity, O_COLOR};
+			tetrimino->tiles[3] = (Tile){5, 0, 0, tetrimino->velocity, O_COLOR};
+			tetrimino->xPosition = 4;
 			tetrimino->yPosition = 1;
 			break;
 		
 		case 'T':
-			tetrimino -> color = "a13eff";
-			tetrimino->tiles[0] = (Tile){-1, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[1] = (Tile){0, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[2] = (Tile){0, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[3] = (Tile){1, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->xPosition = -1;
+			tetrimino -> color = T_COLOR;
+			tetrimino->tiles[0] = (Tile){3, 1, 0, tetrimino->velocity, T_COLOR};
+			tetrimino->tiles[1] = (Tile){4, 1, 0, tetrimino->velocity, T_COLOR};
+			tetrimino->tiles[2] = (Tile){4, 0, 0, tetrimino->velocity, T_COLOR};
+			tetrimino->tiles[3] = (Tile){5, 1, 0, tetrimino->velocity, T_COLOR};
+			tetrimino->xPosition = 3;
 			tetrimino->yPosition = 1;
 			break;
 		
 		case 'S':
-			tetrimino -> color = "a0e700";
-			tetrimino->tiles[0] = (Tile){-1, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[1] = (Tile){0, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[2] = (Tile){0, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[3] = (Tile){1, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->xPosition = -1;
+			tetrimino -> color = S_COLOR;
+			tetrimino->tiles[0] = (Tile){3, 1, 0, tetrimino->velocity, S_COLOR};
+			tetrimino->tiles[1] = (Tile){4, 1, 0, tetrimino->velocity, S_COLOR};
+			tetrimino->tiles[2] = (Tile){4, 0, 0, tetrimino->velocity, S_COLOR};
+			tetrimino->tiles[3] = (Tile){5, 0, 0, tetrimino->velocity, S_COLOR};
+			tetrimino->xPosition = 3;
 			tetrimino->yPosition = 1;
 			break;
 		
 		case 'J':
-			tetrimino -> color = "1116d1";
-			tetrimino->tiles[0] = (Tile){-1, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[1] = (Tile){-1, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[2] = (Tile){0, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[3] = (Tile){1, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->xPosition = -1;
+			tetrimino -> color = J_COLOR;
+			tetrimino->tiles[0] = (Tile){3, 1, 0, tetrimino->velocity, J_COLOR};
+			tetrimino->tiles[1] = (Tile){3, 0, 0, tetrimino->velocity, J_COLOR};
+			tetrimino->tiles[2] = (Tile){4, 1, 0, tetrimino->velocity, J_COLOR};
+			tetrimino->tiles[3] = (Tile){5, 1, 0, tetrimino->velocity, J_COLOR};
+			tetrimino->xPosition = 3;
 			tetrimino->yPosition = 1;
 			break;
 		
 		case 'Z':
-			tetrimino -> color = "ff2f2f";
-			tetrimino->tiles[0] = (Tile){-1, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[1] = (Tile){0, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[2] = (Tile){0, 0, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->tiles[3] = (Tile){1, 1, 0, tetrimino->velocity, tetrimino->color};
-			tetrimino->xPosition = -1;
+			tetrimino -> color = Z_COLOR;
+			tetrimino->tiles[0] = (Tile){3, 0, 0, tetrimino->velocity, Z_COLOR};
+			tetrimino->tiles[1] = (Tile){4, 1, 0, tetrimino->velocity, Z_COLOR};
+			tetrimino->tiles[2] = (Tile){4, 0, 0, tetrimino->velocity, Z_COLOR};
+			tetrimino->tiles[3] = (Tile){5, 1, 0, tetrimino->velocity, Z_COLOR};
+			tetrimino->xPosition = 3;
 			tetrimino->yPosition = 0;
 			break;
 		
@@ -189,6 +204,14 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 			moveTile(&tetrimino->tiles[i], 1, 0);
 		}
 		tetrimino->xPosition++;
+	} else if (buttonsDown & WPAD_BUTTON_RIGHT) {
+		for (int i = 0; i < 4; i++) {
+			moveTile(&tetrimino->tiles[i], 0, 1);
+		}
+	} else if (buttonsDown & WPAD_BUTTON_LEFT) {
+		for (int i = 0; i < 4; i++) {
+			moveTile(&tetrimino->tiles[i], 0, -1);
+		}
 	}
 }
 
@@ -204,7 +227,7 @@ int tetriminoMovesLeftOnUpPressTest() {
 	initializeTetrimino(&tetrimino);
 	moveTetriminoButtonPress(&tetrimino, 0x0800);
 	
-	if (tetrimino.xPosition != -2) {
+	if (tetrimino.xPosition != 2) {
 		printf("Tetrimino did not move left. Expected position -2 but was %d\n", tetrimino.xPosition);
 		return 1;
 	}
@@ -219,7 +242,7 @@ int tetriminoMovesRightOnDownPressTest() {
 	initializeTetrimino(&tetrimino);
 	moveTetriminoButtonPress(&tetrimino, 0x0400);
 	
-	if (tetrimino.xPosition != 0) {
+	if (tetrimino.xPosition != 4) {
 		printf("Tetrimino did not move right. Expected position 0 but was %d\n", tetrimino.xPosition);
 		return 1;
 	}
@@ -245,27 +268,25 @@ int main() {
 		return 1;
 	} else {
 		printf("Tests Passed!\n");
+		printf("Frame buffer height: %d\n", rmode->xfbHeight);
+		printf("Frame buffer width: %d\n", rmode->fbWidth);
 	}
+	
+	backgroundColor = xfb[100 * rmode->fbWidth + 100];
 	
 	Tetrimino tetrimino;
 	tetrimino.shape = 'T';
 	initializeTetrimino(&tetrimino);
 	
-	//int squareSize = 50; // Side length of the square
-	//int startX = 0; // X-coordinate of the top-left corner
-	//int startY = 0; // Y-coordinate of the top-left corner
-
-	//for (int y = startY; y < startY + squareSize; y++) {
-	//	for (int x = startX; x < startX + squareSize; x++) {
-	//		// Calculate the framebuffer index for this pixel
-	//		int index = y * rmode->fbWidth + x;
-//
-	//		// Set the pixel color (red in this example)
-	//		xfb[index] = 0x00aae5; // RGB value for red
-	//	}
-	//}
-	//drawSquare();
-	
+	drawSquare(10, 0, 5, J_COLOR); // DARK GREEN
+	drawSquare(15, 0, 5, I_COLOR); // LIGHT BLUE
+	drawSquare(20, 0, 5, 0xFFFFFF88); // WHITE
+	drawSquare(30, 0, 5, S_COLOR); // BRIGHT GREEN
+	drawSquare(35, 0, 5, L_COLOR); // ORANGE
+	drawSquare(45, 0, 5, T_COLOR); // PURPLE
+	drawSquare(50, 0, 5, Z_COLOR); // RED
+	//drawSquare(55, 0, 5, 0x10801080);
+	drawSquare(65, 0, 5, O_COLOR); // YELLOW
 	while(1) {
 		WPAD_ScanPads();
 		u16 buttonsDown = WPAD_ButtonsDown(0);
