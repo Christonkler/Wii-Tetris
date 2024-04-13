@@ -1,4 +1,4 @@
-main.o: C:/Users/cjone/Downloads/Tutorial/source/main.c \
+main.o: C:/Users/cjone/Downloads/Wii-Tetris/source/main.c \
  C:/devkitPro/libogc/include/ogcsys.h \
  C:/devkitPro/libogc/include/gccore.h \
  C:/devkitPro/libogc/include/ogc/dsp.h \
@@ -58,7 +58,7 @@ main.o: C:/Users/cjone/Downloads/Tutorial/source/main.c \
  C:/devkitPro/libogc/include/wiiuse/wiiuse.h \
  C:/devkitPro/libogc/include/bte/bte.h \
  C:/devkitPro/libogc/include/bte/bd_addr.h \
- C:/Users/cjone/Downloads/Tutorial/source/pieces.h
+ C:/Users/cjone/Downloads/Wii-Tetris/source/pieces.h
 C:/devkitPro/libogc/include/ogcsys.h:
 C:/devkitPro/libogc/include/gccore.h:
 C:/devkitPro/libogc/include/ogc/dsp.h:
@@ -118,4 +118,4 @@ C:/devkitPro/libogc/include/wiiuse/wpad.h:
 C:/devkitPro/libogc/include/wiiuse/wiiuse.h:
 C:/devkitPro/libogc/include/bte/bte.h:
 C:/devkitPro/libogc/include/bte/bd_addr.h:
-C:/Users/cjone/Downloads/Tutorial/source/pieces.h:
+C:/Users/cjone/Downloads/Wii-Tetris/source/pieces.h:
