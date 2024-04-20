@@ -6,11 +6,16 @@
 #include <gccore.h>
 #include <wiiuse/wpad.h>
 #include <unistd.h>
+#include <time.h>
+#include <sys/timeb.h>
+
 
 #include "pieces.h"
 
-static u32 *xfb; // SCREEN BOUNDS ARE 240x320
+static u32 *xfb; // SCREEN BOUNDS ARE 240x320 420 IS THE BOTTOM, 320 IS RIGHT SIDE
 static GXRModeObj *rmode;
+static int leftX = 100;
+static int bottomY = 100;
 //WPAD_BUTTON_2=0x0001
 //WPAD_BUTTON_1=0x0002
 //WPAD_BUTTON_B=0x0004
@@ -25,6 +30,13 @@ static GXRModeObj *rmode;
 //WPAD_NUNCHUK_BUTTON_Z=(0x0001--16)
 //WPAD_NUNCHUK_BUTTON_C=(0x0002--16)
 
+//
+//
+//
+//       GRAPHICS
+//
+//
+//
 
 void initializeGraphics() {
   
@@ -33,7 +45,7 @@ void initializeGraphics() {
  
 	rmode = VIDEO_GetPreferredMode(NULL);
 
-	xfb = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
+	xfb = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode)); 
 	console_init(xfb,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
  
 	VIDEO_Configure(rmode);
@@ -50,9 +62,7 @@ void drawSquare(int startX, int startY, int squareSize, u32 color) {
 		for (int x = startX; x < startX + squareSize; x++) {
 			// Calculate the framebuffer index for this pixel
 			int index = (y * rmode->fbWidth)/2 + x;
-
-			// Set the pixel color (red in this example)
-			xfb[index] = color; // RGB value for red
+			xfb[index] = color;
 		}
 	}
 }
@@ -67,6 +77,23 @@ void eraseSquare(int startX, int startY, int squareSize) {
 	}
 }
 
+
+void eraseTetrimino(Tetrimino* tetrimino) {
+	for (int i = 0; i < 4; i++) {
+		eraseSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE);
+	}
+}
+
+
+
+//
+//
+//
+//
+//          MOVEMENT
+//
+//
+//
 
 
 void initializeTetrimino(Tetrimino* tetrimino) {
@@ -103,16 +130,16 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 		
 		case 'T':
 			tetrimino -> color = T_COLOR;
-			tetrimino->tiles[0] = (Tile){50, 70, 0, tetrimino->velocity, T_COLOR};
+			tetrimino->tiles[0] = (Tile){leftX, bottomY, 0, tetrimino->velocity, T_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
-			tetrimino->tiles[1] = (Tile){60, 70, 0, tetrimino->velocity, T_COLOR};
+			tetrimino->tiles[1] = (Tile){leftX+TILE_SIZE, bottomY, 0, tetrimino->velocity, T_COLOR};
 			drawSquare(tetrimino->tiles[1].xPosition, tetrimino->tiles[1].yPosition, TILE_SIZE, tetrimino->tiles[1].color);
-			tetrimino->tiles[2] = (Tile){60, 50, 0, tetrimino->velocity, T_COLOR};
+			tetrimino->tiles[2] = (Tile){leftX+TILE_SIZE, bottomY- TILE_SIZE*2, 0, tetrimino->velocity, T_COLOR};
 			drawSquare(tetrimino->tiles[2].xPosition, tetrimino->tiles[2].yPosition, TILE_SIZE, tetrimino->tiles[2].color);
-			tetrimino->tiles[3] = (Tile){70, 70, 0, tetrimino->velocity, T_COLOR};
+			tetrimino->tiles[3] = (Tile){leftX+2*TILE_SIZE, bottomY, 0, tetrimino->velocity, T_COLOR};
 			drawSquare(tetrimino->tiles[3].xPosition, tetrimino->tiles[3].yPosition, TILE_SIZE, tetrimino->tiles[3].color);
-			tetrimino->xPosition = 50;
-			tetrimino->yPosition = 20;
+			tetrimino->xPosition = leftX;
+			tetrimino->yPosition = bottomY;
 			break;
 		
 		case 'S':
@@ -170,33 +197,25 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 	if (buttonsDown & WPAD_BUTTON_A) {
 		printf("Button A pressed.\n");
 	} else if (buttonsDown & WPAD_BUTTON_UP) {  // LEFT
-		for (int i = 0; i < 4; i++) {
-			eraseSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE);
-		}
+		eraseTetrimino(tetrimino);
 		for (int i = 0; i < 4; i++) {
 			moveTile(&tetrimino->tiles[i], -1*TILE_SIZE, 0);
 		}
 		tetrimino->xPosition -= TILE_SIZE;
 	} else if (buttonsDown & WPAD_BUTTON_DOWN) { // RIGHT
-		for (int i = 0; i < 4; i++) {
-			eraseSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE);
-		}
+		eraseTetrimino(tetrimino);
 		for (int i = 0; i < 4; i++) {
 			moveTile(&tetrimino->tiles[i], TILE_SIZE, 0);
 		}
 		tetrimino->xPosition += TILE_SIZE;
 	} else if (buttonsDown & WPAD_BUTTON_RIGHT) { // UP
-		for (int i = 0; i < 4; i++) {
-			eraseSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE);
-		}
+		eraseTetrimino(tetrimino);
 		for (int i = 0; i < 4; i++) {
 			moveTile(&tetrimino->tiles[i], 0, -1*TILE_SIZE);
 		}
 		tetrimino->yPosition -= TILE_SIZE;
 	} else if (buttonsDown & WPAD_BUTTON_LEFT) { // DOWN
-		for (int i = 0; i < 4; i++) {
-			eraseSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE);
-		}
+		eraseTetrimino(tetrimino);
 		for (int i = 0; i < 4; i++) {
 			moveTile(&tetrimino->tiles[i], 0, TILE_SIZE);
 		}
@@ -205,9 +224,42 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 }
 
 
-void movePieceGravity() {
-
+void movePieceGravity(Tetrimino* tetrimino) {
+	if (tetrimino->yPosition > 420-TILE_SIZE) { // Bottom of screen
+		return;
+	}
+	eraseTetrimino(tetrimino);
+	for (int i = 0; i < 4; i++) {
+		moveTile(&tetrimino->tiles[i], 0, TILE_SIZE);
+	}
+	tetrimino->yPosition += TILE_SIZE;
 }
+
+
+
+//
+//
+//
+//      MISC
+//
+//
+//
+
+
+
+//double getElapsedTimeSeconds(struct timeb* start, struct timeb* current) {
+//	return (double)(current->time - start->time) + (double)(current->millitm - start->millitm) / 1000.0;
+//}
+
+
+//double getElapsedTimeSeconds(LARGE_INTEGER* start, LARGE_INTEGER* current) {
+//    LARGE_INTEGER frequency;
+//    QueryPerformanceFrequency(&frequency);
+
+//    double elapsed_seconds = (double)(current->QuadPart - start->QuadPart) / frequency.QuadPart;
+//    return elapsed_seconds;
+//}
+
 
 
  //
@@ -226,9 +278,10 @@ int tetriminoMovesLeftOnUpPressTest() {
 	Tetrimino tetrimino;
 	tetrimino.shape = 'T';
 	initializeTetrimino(&tetrimino);
+	eraseTetrimino(&tetrimino);
 	moveTetriminoButtonPress(&tetrimino, 0x0800);
-	
-	if (tetrimino.xPosition != (50-TILE_SIZE)) {
+	eraseTetrimino(&tetrimino);
+	if (tetrimino.xPosition != (leftX-TILE_SIZE)) {
 		printf("Tetrimino did not move left. Expected position %d but was %d\n", 50-TILE_SIZE, tetrimino.xPosition);
 		return 1;
 	}
@@ -241,9 +294,11 @@ int tetriminoMovesRightOnDownPressTest() {
 	Tetrimino tetrimino;
 	tetrimino.shape = 'T';
 	initializeTetrimino(&tetrimino);
+	eraseTetrimino(&tetrimino);
 	moveTetriminoButtonPress(&tetrimino, 0x0400);
+	eraseTetrimino(&tetrimino);
 	
-	if (tetrimino.xPosition != (50+TILE_SIZE)) {
+	if (tetrimino.xPosition != (leftX+TILE_SIZE)) {
 		printf("Tetrimino did not move right. Expected position %d but was %d\n", 50+TILE_SIZE, tetrimino.xPosition);
 		return 1;
 	}
@@ -278,6 +333,10 @@ int main() {
 		printf("Frame buffer width: %d\n", rmode->fbWidth);
 	}
 	
+	//struct timeb startTime, currentTime;
+	//LARGE_INTEGER start_time, current_time;
+    //double interval = 0.25; // Desired interval in seconds
+    
 	
 	Tetrimino tetrimino;
 	tetrimino.shape = 'T';
@@ -293,10 +352,17 @@ int main() {
 	//drawSquare(55, 0, TILE_SIZE, 0x10801080);
 	drawSquare(65, 0, TILE_SIZE, O_COLOR); // YELLOW
 	printf("ALEX IS A GOOBER");
+	
+	//ftime(&startTime);
 	while(1) {
+		//ftime(&currentTime);
 		WPAD_ScanPads();
 		u16 buttonsDown = WPAD_ButtonsDown(0);
 		moveTetriminoButtonPress(&tetrimino, buttonsDown);
+		//if (getElapsedTimeSeconds(&startTime, &currentTime) > interval) {
+		//	movePieceGravity(&tetrimino);
+		//	ftime(&startTime);
+		//}
 	}
  
 	return 0;
