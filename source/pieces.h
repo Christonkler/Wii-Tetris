@@ -1,8 +1,6 @@
 typedef struct Tile {
 	int xPosition;
 	int yPosition;
-	float realYPosition;
-	float velocity;
 	u32 color;
 } Tile;
 
@@ -11,7 +9,6 @@ typedef struct Tetrimino {
 	char shape;
 	int xPosition;
 	int yPosition;
-	float velocity;
 	u32 color;
 	Tile tiles[4];
 } Tetrimino;
