@@ -16,7 +16,7 @@ static u32 *xfb; // SCREEN BOUNDS ARE 240x320 420 IS THE BOTTOM, 320 IS RIGHT SI
 static GXRModeObj *rmode;
 static int leftX = 160;
 static int bottomY = 100;
-static char allPieces[] = {'T', 'O', 'S', 'Z', 'L', 'Z', 'I'};
+//static char allPieces[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 //static int sizeAllPieces = sizeof(allPieces);
 //WPAD_BUTTON_2=0x0001
 //WPAD_BUTTON_1=0x0002
@@ -172,13 +172,6 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 		
 		case 'J':
 			tetrimino -> color = J_COLOR;
-			//tetrimino->tiles[0] = (Tile){3, 1, J_COLOR};
-			//tetrimino->tiles[1] = (Tile){3, 0, J_COLOR};
-			//tetrimino->tiles[2] = (Tile){4, 1, J_COLOR};
-			//tetrimino->tiles[3] = (Tile){5, 1, J_COLOR};
-			//tetrimino->xPosition = 3;
-			//tetrimino->yPosition = 1;
-			
 			tetrimino->tiles[0] = (Tile){leftX, bottomY, J_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
 			tetrimino->tiles[1] = (Tile){leftX, bottomY-2*TILE_SIZE, J_COLOR};
@@ -202,11 +195,11 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 			tetrimino->tiles[3] = (Tile){leftX+2*TILE_SIZE, bottomY, Z_COLOR};
 			drawSquare(tetrimino->tiles[3].xPosition, tetrimino->tiles[3].yPosition, TILE_SIZE, tetrimino->tiles[3].color);
 			tetrimino->xPosition = leftX;
-			tetrimino->yPosition = bottomY-2*TILE_SIZE;
+			tetrimino->yPosition = bottomY;
 			break;
 		
 		default:
-			printf("YOU FUCKED UP BIG TIME BUCKO!\n");
+			printf("RANDOMIZER IS BUSTED! %c\n NOT IN SET\n", (char)tetrimino->shape);
 			break;
 	}
 }
@@ -313,22 +306,25 @@ long long current_timestamp() {
 
 char select_and_remove(char arr[], int* size) {
     if (*size == 0) {
-        // Restore the original characters
-        memcpy(arr, allPieces, 7 * sizeof(char));
+        // Reset array
+        arr[0] = 'T';
+		arr[1] = 'O';
+		arr[2] = 'S';
+		arr[3] = 'Z';
+		arr[4] = 'L';
+		arr[5] = 'J';
+		arr[6] = 'I';
         *size = 7;
     }
-	srand(time(NULL));
 	int random_index = rand() % *size;
+	//printf("%d", random_index);
 
-    // Get the randomly selected character
     char selected_character = arr[random_index];
 
-    // Remove the character by shifting elements
     for (int i = random_index; i < *size - 1; i++) {
         arr[i] = arr[i + 1];
     }
 
-    // Decrease the size of the array
     (*size)--;
 
     return selected_character;
@@ -452,11 +448,12 @@ int floorTest() { // TODO: TEST FLOOR ONCE BUTTON MOVEMENT BOUNDS ARE DEFINED
 
 int bagOf7RandomizerTest() {
 	int size = 7;
-	char arr[] = {'T', 'O', 'S', 'Z', 'L', 'Z', 'I'};
-	for (int i = 0; i < 10; i++) {
-		printf("%c", select_and_remove(arr, &size));
+	char arr[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
+	for (int i = 0; i < 15; i++) {
+		select_and_remove(arr, &size);
+		//printf("%c", select_and_remove(arr, &size));
 	}
-	printf("%d", size);
+	//printf("%d", size);
 	return 1;
 }
 
@@ -491,31 +488,34 @@ int main() {
 		printf("Frame buffer height: %d\n", rmode->xfbHeight);
 		printf("Frame buffer width: %d\n", rmode->fbWidth);
 	}
+	srand(time(NULL));
+	rand();
 	
 	//struct timeb startTime, currentTime;
 	//LARGE_INTEGER start_time, current_time;
-    double interval = 100; // Desired interval in seconds
-	char my_characters[7];
+    double interval = 50; // Desired interval in seconds
+	char my_characters[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 	int size = 7;
     
 	
 	Tetrimino tetrimino;
-	tetrimino.shape = 'T';
+	tetrimino.shape = select_and_remove(my_characters, &size);
 	initializeTetrimino(&tetrimino);
 	
-	drawSquare(10, 0, TILE_SIZE, J_COLOR); // DARK GREEN
-	drawSquare(15, 0, TILE_SIZE, I_COLOR); // LIGHT BLUE
-	drawSquare(20, 0, TILE_SIZE, 0xFFFFFF88); // WHITE
-	drawSquare(30, 0, TILE_SIZE, S_COLOR); // BRIGHT GREEN
-	drawSquare(35, 0, TILE_SIZE, L_COLOR); // ORANGE
-	drawSquare(45, 0, TILE_SIZE, T_COLOR); // PURPLE
-	drawSquare(50, 0, TILE_SIZE, Z_COLOR); // RED
+	//drawSquare(10, 0, TILE_SIZE, J_COLOR); // DARK GREEN
+	//drawSquare(15, 0, TILE_SIZE, I_COLOR); // LIGHT BLUE
+	//drawSquare(20, 0, TILE_SIZE, 0xFFFFFF88); // WHITE
+	//drawSquare(30, 0, TILE_SIZE, S_COLOR); // BRIGHT GREEN
+	//drawSquare(35, 0, TILE_SIZE, L_COLOR); // ORANGE
+	//drawSquare(45, 0, TILE_SIZE, T_COLOR); // PURPLE
+	//drawSquare(50, 0, TILE_SIZE, Z_COLOR); // RED
 	//drawSquare(55, 0, TILE_SIZE, 0x10801080);
-	drawSquare(65, 0, TILE_SIZE, O_COLOR); // YELLOW
+	//drawSquare(65, 0, TILE_SIZE, O_COLOR); // YELLOW
 	
 	//ftime(&startTime);
+	
 	long long start = current_timestamp();
-	printf("Start time %lld\n", start);
+	//printf("RAND_MAX: %d\n", RAND_MAX);
 	while(1) {
 		//ftime(&currentTime);
 		WPAD_ScanPads();

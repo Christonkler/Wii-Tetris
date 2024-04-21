@@ -22,7 +22,7 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown);
 
 u32 I_COLOR = 0xABCDEF12;
 u32 L_COLOR = 0xFF0000FF;
-u32 J_COLOR = 0x01234567;
+u32 J_COLOR = 0xFF34567;
 u32 T_COLOR = 0x00FF00FF;
 u32 S_COLOR = 0xFF00FF00;
 u32 O_COLOR = 0xFF00FFFF;
