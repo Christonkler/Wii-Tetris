@@ -207,7 +207,6 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 
 void moveTile(Tile* tile, int xPositionChange, int yPositionChange) {
 	//CHECK IF MOVE IS LEGAL
-	//eraseSquare(tile->xPosition, tile->yPosition, TILE_SIZE);
 	tile->xPosition += xPositionChange;
 	tile->yPosition += yPositionChange;
 	drawSquare(tile->xPosition, tile->yPosition, TILE_SIZE, tile->color);
@@ -276,27 +275,6 @@ int movePieceGravity(Tetrimino* tetrimino) {
 
 
 
-//double getElapsedTimeSeconds(struct timeb* start, struct timeb* current) {
-//	return (double)(current->time - start->time) + (double)(current->millitm - start->millitm) / 1000.0;
-//}
-
-
-//double getElapsedTimeSeconds(LARGE_INTEGER* start, LARGE_INTEGER* current) {
-//    LARGE_INTEGER frequency;
-//    QueryPerformanceFrequency(&frequency);
-
-//    double elapsed_seconds = (double)(current->QuadPart - start->QuadPart) / frequency.QuadPart;
-//    return elapsed_seconds;
-//}
-
-
-long long currentTimestamp() {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    long milliseconds = ts.tv_sec * 1000LL + ts.tv_nsec / 1000000;
-    return milliseconds;
-}
-
 long long current_timestamp() {
     struct timeval te;
     gettimeofday(&te, NULL);
@@ -317,7 +295,6 @@ char select_and_remove(char arr[], int* size) {
         *size = 7;
     }
 	int random_index = rand() % *size;
-	//printf("%d", random_index);
 
     char selected_character = arr[random_index];
 
@@ -448,13 +425,52 @@ int floorTest() { // TODO: TEST FLOOR ONCE BUTTON MOVEMENT BOUNDS ARE DEFINED
 
 int bagOf7RandomizerTest() {
 	int size = 7;
-	char arr[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
-	for (int i = 0; i < 15; i++) {
-		select_and_remove(arr, &size);
-		//printf("%c", select_and_remove(arr, &size));
+	char allPieces[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
+	char chosenPieces[21];
+	for (int i = 0; i < 21; i++) {
+		chosenPieces[i] = select_and_remove(allPieces, &size);
 	}
-	//printf("%d", size);
-	return 1;
+	int tCount = 0;
+	int oCount = 0;
+	int sCount = 0;
+	int zCount = 0;
+	int lCount = 0;
+	int jCount = 0;
+	int iCount = 0;
+	for (int i = 0; i < 21; i++) {
+		switch(chosenPieces[i]) {
+			case 'T':
+				tCount++;
+				break;
+			case 'O':
+				oCount++;
+				break;
+			case 'S':
+				sCount++;
+				break;
+			case 'Z':
+				zCount++;
+				break;
+			case 'L':
+				lCount++;
+				break;
+			case 'J':
+				jCount++;
+				break;
+			case 'I':
+				iCount++;
+				break;
+			default:
+				printf("YOU FUCKING SUCK AT RANDOMIZERS CHRIS!");
+				return 1;
+		}
+	}
+	if ((tCount != 3) || (oCount != 3) || (sCount != 3) || (zCount != 3) || (lCount != 3) || (jCount != 3) || (iCount != 3)) {
+		printf("NOT 7 BAG DUMBASS!");
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 
@@ -466,7 +482,7 @@ int run_tests() {
 	failedTests += tetriminoMovesDownOnLeftPressTest();
 	failedTests += gravityTest();
 	failedTests += floorTest();
-	//failedTests +=- bagOf7RandomizerTest();
+	failedTests +=- bagOf7RandomizerTest();
 	return failedTests;
 }
 
@@ -491,8 +507,6 @@ int main() {
 	srand(time(NULL));
 	rand();
 	
-	//struct timeb startTime, currentTime;
-	//LARGE_INTEGER start_time, current_time;
     double interval = 50; // Desired interval in seconds
 	char my_characters[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 	int size = 7;
@@ -502,26 +516,14 @@ int main() {
 	tetrimino.shape = select_and_remove(my_characters, &size);
 	initializeTetrimino(&tetrimino);
 	
-	//drawSquare(10, 0, TILE_SIZE, J_COLOR); // DARK GREEN
-	//drawSquare(15, 0, TILE_SIZE, I_COLOR); // LIGHT BLUE
 	//drawSquare(20, 0, TILE_SIZE, 0xFFFFFF88); // WHITE
-	//drawSquare(30, 0, TILE_SIZE, S_COLOR); // BRIGHT GREEN
-	//drawSquare(35, 0, TILE_SIZE, L_COLOR); // ORANGE
-	//drawSquare(45, 0, TILE_SIZE, T_COLOR); // PURPLE
-	//drawSquare(50, 0, TILE_SIZE, Z_COLOR); // RED
-	//drawSquare(55, 0, TILE_SIZE, 0x10801080);
-	//drawSquare(65, 0, TILE_SIZE, O_COLOR); // YELLOW
-	
-	//ftime(&startTime);
 	
 	long long start = current_timestamp();
-	//printf("RAND_MAX: %d\n", RAND_MAX);
 	while(1) {
 		//ftime(&currentTime);
 		WPAD_ScanPads();
 		u16 buttonsDown = WPAD_ButtonsDown(0);
 		moveTetriminoButtonPress(&tetrimino, buttonsDown);
-		//printf("Interval: %lld\n", currentTimestamp() - start);
 		if (current_timestamp() - start > interval) {
 			if (movePieceGravity(&tetrimino) != 0) {
 				tetrimino.shape = select_and_remove(my_characters, &size);
