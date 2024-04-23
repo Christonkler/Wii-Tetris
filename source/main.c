@@ -205,6 +205,30 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 }
 
 
+
+int movementBlocked(Tetrimino* tetrimino, int xPositionChange, int yPositionChange) {
+	int newXPosition;
+	int newYPosition;
+	for (int i = 0; i < 4; i++) {
+		newXPosition = tetrimino->tiles[i].xPosition + xPositionChange;
+		newYPosition = tetrimino->tiles[i].yPosition + yPositionChange;
+		if (xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != BACKGROUND_COLOR) {
+			int notBlocked = 0;
+			for (int j = 0; j < 4; j++) {
+				if ((tetrimino->tiles[j].xPosition == newXPosition) && (tetrimino->tiles[j].yPosition == newYPosition)) {
+					notBlocked++;
+				}
+			}
+			if (notBlocked == 0) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+
+
 void moveTile(Tile* tile, int xPositionChange, int yPositionChange) {
 	//CHECK IF MOVE IS LEGAL
 	tile->xPosition += xPositionChange;
@@ -252,7 +276,7 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 
 
 int movePieceGravity(Tetrimino* tetrimino) {
-	if (tetrimino->yPosition > 470-TILE_SIZE) { // Bottom of screen
+	if ((tetrimino->yPosition > 470-TILE_SIZE) || movementBlocked(tetrimino, 0, 2*TILE_SIZE) != 0) { // Bottom of screen
 		return 1;
 	}
 	eraseTetrimino(tetrimino);
@@ -507,7 +531,7 @@ int main() {
 	srand(time(NULL));
 	rand();
 	
-    double interval = 50; // Desired interval in seconds
+    double interval = 40; // Desired interval in seconds
 	char my_characters[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 	int size = 7;
     
@@ -523,11 +547,25 @@ int main() {
 		//ftime(&currentTime);
 		WPAD_ScanPads();
 		u16 buttonsDown = WPAD_ButtonsDown(0);
+		if (buttonsDown & 0x1000) {
+			while (1) {
+				WPAD_ScanPads();
+				buttonsDown = WPAD_ButtonsDown(0);
+				if (buttonsDown & 0x1000) {
+					break;
+				}
+			}
+			WPAD_ScanPads();
+			buttonsDown = WPAD_ButtonsDown(0);
+		}
 		moveTetriminoButtonPress(&tetrimino, buttonsDown);
 		if (current_timestamp() - start > interval) {
 			if (movePieceGravity(&tetrimino) != 0) {
 				tetrimino.shape = select_and_remove(my_characters, &size);
 				initializeTetrimino(&tetrimino);
+				if (movementBlocked(&tetrimino, 0, 2*TILE_SIZE) != 0) {
+					return 0;
+				}
 			}
 			start = current_timestamp();
 		}
