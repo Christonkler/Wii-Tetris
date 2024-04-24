@@ -429,7 +429,7 @@ int gravityTest() {
 }
 
 
-int floorTest() { // TODO: TEST FLOOR ONCE BUTTON MOVEMENT BOUNDS ARE DEFINED
+int floorTest() {
 	Tetrimino tetrimino;
 	tetrimino.shape = 'T';
 	initializeTetrimino(&tetrimino);
@@ -447,11 +447,30 @@ int floorTest() { // TODO: TEST FLOOR ONCE BUTTON MOVEMENT BOUNDS ARE DEFINED
 }
 
 
+int pieceFloorTest() {
+	Tetrimino tetrimino;
+	tetrimino.shape = 'I';
+	initializeTetrimino(&tetrimino);
+	eraseTetrimino(&tetrimino);
+	xfb[((bottomY+2*TILE_SIZE) * rmode->fbWidth)/2 + tetrimino.xPosition] = 0x12F12312;
+	movePieceGravity(&tetrimino);
+	eraseTetrimino(&tetrimino);
+	
+	if (tetrimino.yPosition != bottomY) {
+		printf("Tetrimino fell through other piece. Final position: %d\n", tetrimino.yPosition);
+		return 1;
+	}
+	xfb[((bottomY+2*TILE_SIZE) * rmode->fbWidth)/2 + tetrimino.xPosition] = BACKGROUND_COLOR;
+	
+	return 0;
+}
+
+
 int bagOf7RandomizerTest() {
 	int size = 7;
 	char allPieces[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
-	char chosenPieces[21];
-	for (int i = 0; i < 21; i++) {
+	char chosenPieces[70];
+	for (int i = 0; i < 70; i++) {
 		chosenPieces[i] = select_and_remove(allPieces, &size);
 	}
 	int tCount = 0;
@@ -461,7 +480,7 @@ int bagOf7RandomizerTest() {
 	int lCount = 0;
 	int jCount = 0;
 	int iCount = 0;
-	for (int i = 0; i < 21; i++) {
+	for (int i = 0; i < 70; i++) {
 		switch(chosenPieces[i]) {
 			case 'T':
 				tCount++;
@@ -489,7 +508,7 @@ int bagOf7RandomizerTest() {
 				return 1;
 		}
 	}
-	if ((tCount != 3) || (oCount != 3) || (sCount != 3) || (zCount != 3) || (lCount != 3) || (jCount != 3) || (iCount != 3)) {
+	if ((tCount != 10) || (oCount != 10) || (sCount != 10) || (zCount != 10) || (lCount != 10) || (jCount != 10) || (iCount != 10)) {
 		printf("NOT 7 BAG DUMBASS!");
 		return 1;
 	} else {
@@ -506,7 +525,8 @@ int run_tests() {
 	failedTests += tetriminoMovesDownOnLeftPressTest();
 	failedTests += gravityTest();
 	failedTests += floorTest();
-	failedTests +=- bagOf7RandomizerTest();
+	failedTests += bagOf7RandomizerTest();
+	failedTests += pieceFloorTest();
 	return failedTests;
 }
 
@@ -525,8 +545,6 @@ int main() {
 		return 1;
 	} else {
 		printf("Tests Passed!\n");
-		printf("Frame buffer height: %d\n", rmode->xfbHeight);
-		printf("Frame buffer width: %d\n", rmode->fbWidth);
 	}
 	srand(time(NULL));
 	rand();
@@ -544,7 +562,6 @@ int main() {
 	
 	long long start = current_timestamp();
 	while(1) {
-		//ftime(&currentTime);
 		WPAD_ScanPads();
 		u16 buttonsDown = WPAD_ButtonsDown(0);
 		if (buttonsDown & 0x1000) {
