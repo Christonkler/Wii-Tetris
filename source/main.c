@@ -339,11 +339,7 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 	//u16 buttonsHeld = WPAD_ButtonsHeld(0);
 	//u16 buttonsUp = WPAD_ButtonsUp(0);
 	
-	if (buttonsDown & WPAD_BUTTON_A) {
-		printf("Y Position: %d\n", tetrimino->yPosition);
-	} else if (buttonsDown & WPAD_BUTTON_B) {
-		printf("X Position: %d\n", tetrimino->xPosition);
-	} else if (buttonsDown & WPAD_BUTTON_UP) {  // LEFT
+	if (buttonsDown & WPAD_BUTTON_UP) {  // LEFT
 		eraseTetrimino(tetrimino);
 		for (int i = 0; i < 4; i++) {
 			moveTile(&tetrimino->tiles[i], -1*TILE_SIZE, 0);
@@ -355,21 +351,25 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 			moveTile(&tetrimino->tiles[i], TILE_SIZE, 0);
 		}
 		tetrimino->xPosition += TILE_SIZE;
-	} else if (buttonsDown & WPAD_BUTTON_RIGHT) { // UP
-		eraseTetrimino(tetrimino);
-		for (int i = 0; i < 4; i++) {
-			moveTile(&tetrimino->tiles[i], 0, -2*TILE_SIZE);
-		}
-		tetrimino->yPosition -= 2*TILE_SIZE;
-	} else if (buttonsDown & WPAD_BUTTON_LEFT) { // DOWN
+	//} else if (buttonsDown & WPAD_BUTTON_RIGHT) { // UP
+	//	eraseTetrimino(tetrimino);
+	//	for (int i = 0; i < 4; i++) {
+	//		moveTile(&tetrimino->tiles[i], 0, -2*TILE_SIZE);
+	//	}
+	//	tetrimino->yPosition -= 2*TILE_SIZE;
+	}
+	
+	if (buttonsDown & WPAD_BUTTON_LEFT) { // DOWN
 		eraseTetrimino(tetrimino);
 		for (int i = 0; i < 4; i++) {
 			moveTile(&tetrimino->tiles[i], 0, 2*TILE_SIZE);
 		}
 		tetrimino->yPosition += 2*TILE_SIZE;
-	} else if (buttonsDown & WPAD_BUTTON_2) {
+	}
+	
+	if (buttonsDown & WPAD_BUTTON_2) { // ROTATE RIGHT
 		rotateTetrimino(tetrimino, 1);
-	} else if (buttonsDown & WPAD_BUTTON_1) {
+	} else if (buttonsDown & WPAD_BUTTON_1) { // ROTATE LEFT
 		rotateTetrimino(tetrimino, -1);
 	}
 }
@@ -478,21 +478,21 @@ int tetriminoMovesRightOnDownPressTest() {
 }
 
 
-int tetriminoMovesUpOnRightPressTest() {
-	Tetrimino tetrimino;
-	tetrimino.shape = 'T';
-	initializeTetrimino(&tetrimino);
-	eraseTetrimino(&tetrimino);
-	moveTetriminoButtonPress(&tetrimino, 0x0200);
-	eraseTetrimino(&tetrimino);
-	
-	if (tetrimino.yPosition != (bottomY-2*TILE_SIZE)) {
-		printf("Tetrimino did not move up. Expected position %d but was %d\n", bottomY-2*TILE_SIZE, tetrimino.yPosition);
-		return 1;
-	}
-	
-	return 0;
-}
+//int tetriminoMovesUpOnRightPressTest() {
+//	Tetrimino tetrimino;
+//	tetrimino.shape = 'T';
+//	initializeTetrimino(&tetrimino);
+//	eraseTetrimino(&tetrimino);
+//	moveTetriminoButtonPress(&tetrimino, 0x0200);
+//	eraseTetrimino(&tetrimino);
+//	
+//	if (tetrimino.yPosition != (bottomY-2*TILE_SIZE)) {
+//		printf("Tetrimino did not move up. Expected position %d but was %d\n", bottomY-2*TILE_SIZE, tetrimino.yPosition);
+//		return 1;
+//	}
+//	
+//	return 0;
+//}
 
 
 int tetriminoMovesDownOnLeftPressTest() {
@@ -621,7 +621,7 @@ int run_tests() {
 	int failedTests = 0;
 	failedTests += tetriminoMovesLeftOnUpPressTest();
 	failedTests += tetriminoMovesRightOnDownPressTest();
-	failedTests += tetriminoMovesUpOnRightPressTest();
+	//failedTests += tetriminoMovesUpOnRightPressTest();
 	failedTests += tetriminoMovesDownOnLeftPressTest();
 	failedTests += gravityTest();
 	failedTests += floorTest();
@@ -652,13 +652,13 @@ int main() {
 	
 	rand();
 	
-    double interval = 40; // Desired interval in seconds
+    double interval = 80; // Desired interval in seconds
 	char my_characters[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 	int size = 7;
     
 	
 	Tetrimino tetrimino;
-	tetrimino.shape = 'I';//select_and_remove(my_characters, &size);
+	tetrimino.shape = select_and_remove(my_characters, &size);
 	initializeTetrimino(&tetrimino);
 	
 	//drawSquare(20, 0, TILE_SIZE, 0xFFFFFF88); // WHITE
@@ -690,7 +690,7 @@ int main() {
 		moveTetriminoButtonPress(&tetrimino, buttonsDown);
 		if (current_timestamp() - start > interval) {
 			if (movePieceGravity(&tetrimino) != 0) {
-				tetrimino.shape = 'I';//select_and_remove(my_characters, &size);
+				tetrimino.shape = select_and_remove(my_characters, &size);
 				initializeTetrimino(&tetrimino);
 				if (movementBlocked(&tetrimino, 0, 2*TILE_SIZE) != 0) {
 					return 0;
