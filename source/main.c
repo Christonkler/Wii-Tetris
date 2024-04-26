@@ -192,7 +192,6 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction) { // No restrictions
 			}
 			break;
 		default:
-			printf("CHRIS YOU LAZY FUCK IMPLEMENT THE OTHER PIECES!!!");
 			break;
 	}
 }
