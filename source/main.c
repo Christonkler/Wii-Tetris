@@ -70,6 +70,22 @@ void drawSquare(int startX, int startY, int squareSize, u32 color) {
 }
 
 
+void initializeWalls() {
+	drawSquare(leftX, bottomY+20*2*TILE_SIZE, TILE_SIZE, 0xFFFFFF88);
+	drawSquare(leftX-4*TILE_SIZE, bottomY, TILE_SIZE, 0xFFFFFF88);
+	drawSquare(leftX+7*TILE_SIZE, bottomY, TILE_SIZE, 0xFFFFFF88);
+	
+	for (int i = -1; i < 20; i++) {
+		drawSquare(leftX-4*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, 0xFFFFFF88);
+		drawSquare(leftX+7*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, 0xFFFFFF88);
+	}
+	
+	for (int i = 0; i < 12; i++) {
+		drawSquare(leftX + (-4 + i)*TILE_SIZE, bottomY +20*2*TILE_SIZE, TILE_SIZE, 0xFFFFFF88);
+	}
+}
+
+
 void drawTetrimino(Tetrimino* tetrimino) {
 	for (int i = 0; i < 4; i++) {
 		drawSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE, tetrimino->color);
@@ -339,13 +355,13 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 	//u16 buttonsHeld = WPAD_ButtonsHeld(0);
 	//u16 buttonsUp = WPAD_ButtonsUp(0);
 	
-	if (buttonsDown & WPAD_BUTTON_UP) {  // LEFT
+	if ((buttonsDown & WPAD_BUTTON_UP) && (movementBlocked(tetrimino, -1*TILE_SIZE, 0) == 0)) {  // LEFT
 		eraseTetrimino(tetrimino);
 		for (int i = 0; i < 4; i++) {
 			moveTile(&tetrimino->tiles[i], -1*TILE_SIZE, 0);
 		}
 		tetrimino->xPosition -= TILE_SIZE;
-	} else if (buttonsDown & WPAD_BUTTON_DOWN) { // RIGHT
+	} else if ((buttonsDown & WPAD_BUTTON_DOWN) && (movementBlocked(tetrimino, TILE_SIZE, 0) == 0)) { // RIGHT
 		eraseTetrimino(tetrimino);
 		for (int i = 0; i < 4; i++) {
 			moveTile(&tetrimino->tiles[i], TILE_SIZE, 0);
@@ -359,7 +375,7 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 	//	tetrimino->yPosition -= 2*TILE_SIZE;
 	}
 	
-	if (buttonsDown & WPAD_BUTTON_LEFT) { // DOWN
+	if ((buttonsDown & WPAD_BUTTON_LEFT) && (movementBlocked(tetrimino, 0, 2*TILE_SIZE) == 0)) { // DOWN
 		eraseTetrimino(tetrimino);
 		for (int i = 0; i < 4; i++) {
 			moveTile(&tetrimino->tiles[i], 0, 2*TILE_SIZE);
@@ -638,6 +654,7 @@ int run_tests() {
 
 int main() {
 	initializeGraphics();
+	initializeWalls();
 	srand(time(NULL));
 	
 	if (run_tests() != 0) {
@@ -652,7 +669,7 @@ int main() {
 	
 	rand();
 	
-    double interval = 80; // Desired interval in seconds
+    double interval = 140; // Desired interval in seconds
 	char my_characters[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 	int size = 7;
     
