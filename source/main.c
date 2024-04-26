@@ -348,11 +348,32 @@ void moveTile(Tile* tile, int xPositionChange, int yPositionChange) {
 }
 
 
+int movePieceGravity(Tetrimino* tetrimino) {
+	if ((tetrimino->yPosition > 470-TILE_SIZE) || movementBlocked(tetrimino, 0, 2*TILE_SIZE) != 0) { // Bottom of screen
+		return 1;
+	}
+	eraseTetrimino(tetrimino);
+	for (int i = 0; i < 4; i++) {
+		moveTile(&tetrimino->tiles[i], 0, 2*TILE_SIZE);
+	}
+	tetrimino->yPosition += 2*TILE_SIZE;
+	return 0;
+}
+
+
 void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 	
 	
 	//u16 buttonsHeld = WPAD_ButtonsHeld(0);
 	//u16 buttonsUp = WPAD_ButtonsUp(0);
+	
+	if (buttonsDown & WPAD_BUTTON_B) { // HARD DROP
+		while (1) {
+			if (movePieceGravity(tetrimino) == 1) {
+				break;
+			}
+		}
+	}
 	
 	if ((buttonsDown & WPAD_BUTTON_UP) && (movementBlocked(tetrimino, -1*TILE_SIZE, 0) == 0)) {  // LEFT
 		eraseTetrimino(tetrimino);
@@ -390,17 +411,7 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 }
 
 
-int movePieceGravity(Tetrimino* tetrimino) {
-	if ((tetrimino->yPosition > 470-TILE_SIZE) || movementBlocked(tetrimino, 0, 2*TILE_SIZE) != 0) { // Bottom of screen
-		return 1;
-	}
-	eraseTetrimino(tetrimino);
-	for (int i = 0; i < 4; i++) {
-		moveTile(&tetrimino->tiles[i], 0, 2*TILE_SIZE);
-	}
-	tetrimino->yPosition += 2*TILE_SIZE;
-	return 0;
-}
+
 
 
 
@@ -668,7 +679,7 @@ int main() {
 	
 	rand();
 	
-    double interval = 140; // Desired interval in seconds
+    double interval = 200; // Desired interval in seconds
 	char my_characters[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 	int size = 7;
     
