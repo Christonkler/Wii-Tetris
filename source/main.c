@@ -70,6 +70,13 @@ void drawSquare(int startX, int startY, int squareSize, u32 color) {
 }
 
 
+void drawTetrimino(Tetrimino* tetrimino) {
+	for (int i = 0; i < 4; i++) {
+		drawSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE, tetrimino->color);
+	}
+}
+
+
 void eraseSquare(int startX, int startY, int squareSize) {
 	for (int y = startY; y < startY + 2*squareSize; y++) {
 		for (int x = startX; x < startX + squareSize; x++) {
@@ -87,6 +94,94 @@ void eraseTetrimino(Tetrimino* tetrimino) {
 }
 
 
+void rotateTetrimino(Tetrimino* tetrimino, int direction) { // No restrictions
+	eraseTetrimino(tetrimino);
+	switch(tetrimino->shape) {
+		case 'T':
+			if (direction == -1) {
+				tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
+			}
+			for (int i = 0; i < 8; i+=2) {
+				tetrimino->tiles[i/2].xPosition += T_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
+				tetrimino->tiles[i/2].yPosition += T_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
+			}
+			drawTetrimino(tetrimino);
+			if (direction == 1) {
+				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
+			}
+			break;
+		case 'L':
+			if (direction == -1) {
+				tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
+			}
+			for (int i = 0; i < 8; i+=2) {
+				tetrimino->tiles[i/2].xPosition += L_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
+				tetrimino->tiles[i/2].yPosition += L_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
+			}
+			drawTetrimino(tetrimino);
+			if (direction == 1) {
+				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
+			}
+			break;
+		case 'J':
+			if (direction == -1) {
+				tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
+			}
+			for (int i = 0; i < 8; i+=2) {
+				tetrimino->tiles[i/2].xPosition += J_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
+				tetrimino->tiles[i/2].yPosition += J_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
+			}
+			drawTetrimino(tetrimino);
+			if (direction == 1) {
+				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
+			}
+			break;
+		case 'S':
+			if (direction == -1) {
+				tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
+			}
+			for (int i = 0; i < 8; i+=2) {
+				tetrimino->tiles[i/2].xPosition += S_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
+				tetrimino->tiles[i/2].yPosition += S_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
+			}
+			drawTetrimino(tetrimino);
+			if (direction == 1) {
+				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
+			}
+			break;
+		case 'Z':
+			if (direction == -1) {
+				tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
+			}
+			for (int i = 0; i < 8; i+=2) {
+				tetrimino->tiles[i/2].xPosition += Z_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
+				tetrimino->tiles[i/2].yPosition += Z_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
+			}
+			drawTetrimino(tetrimino);
+			if (direction == 1) {
+				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
+			}
+			break;
+		case 'I':
+			if (direction == -1) {
+				tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
+			}
+			for (int i = 0; i < 8; i+=2) {
+				tetrimino->tiles[i/2].xPosition += I_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
+				tetrimino->tiles[i/2].yPosition += I_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
+			}
+			drawTetrimino(tetrimino);
+			if (direction == 1) {
+				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
+			}
+			break;
+		default:
+			printf("CHRIS YOU LAZY FUCK IMPLEMENT THE OTHER PIECES!!!");
+			break;
+	}
+}
+
+
 
 //
 //
@@ -99,6 +194,7 @@ void eraseTetrimino(Tetrimino* tetrimino) {
 
 
 void initializeTetrimino(Tetrimino* tetrimino) {
+	tetrimino->rotationState=0;
 	switch(tetrimino->shape) {
 		case 'I':
 			tetrimino -> color = I_COLOR;
@@ -271,6 +367,10 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 			moveTile(&tetrimino->tiles[i], 0, 2*TILE_SIZE);
 		}
 		tetrimino->yPosition += 2*TILE_SIZE;
+	} else if (buttonsDown & WPAD_BUTTON_2) {
+		rotateTetrimino(tetrimino, 1);
+	} else if (buttonsDown & WPAD_BUTTON_1) {
+		rotateTetrimino(tetrimino, -1);
 	}
 }
 
@@ -538,6 +638,7 @@ int run_tests() {
 
 int main() {
 	initializeGraphics();
+	srand(time(NULL));
 	
 	if (run_tests() != 0) {
 		printf("YOU FAILED\n");
@@ -546,7 +647,9 @@ int main() {
 	} else {
 		printf("Tests Passed!\n");
 	}
-	srand(time(NULL));
+	
+	
+	
 	rand();
 	
     double interval = 40; // Desired interval in seconds
@@ -555,20 +658,29 @@ int main() {
     
 	
 	Tetrimino tetrimino;
-	tetrimino.shape = select_and_remove(my_characters, &size);
+	tetrimino.shape = 'I';//select_and_remove(my_characters, &size);
 	initializeTetrimino(&tetrimino);
 	
 	//drawSquare(20, 0, TILE_SIZE, 0xFFFFFF88); // WHITE
+	u16 buttonsDown;
+	
+	while(1) {
+		WPAD_ScanPads();
+		buttonsDown = WPAD_ButtonsDown(0);
+		if (buttonsDown & WPAD_BUTTON_PLUS) {
+			break;
+		}
+	}
 	
 	long long start = current_timestamp();
 	while(1) {
 		WPAD_ScanPads();
-		u16 buttonsDown = WPAD_ButtonsDown(0);
-		if (buttonsDown & 0x1000) {
+		buttonsDown = WPAD_ButtonsDown(0);
+		if (buttonsDown & WPAD_BUTTON_PLUS) {
 			while (1) {
 				WPAD_ScanPads();
 				buttonsDown = WPAD_ButtonsDown(0);
-				if (buttonsDown & 0x1000) {
+				if (buttonsDown & WPAD_BUTTON_PLUS) {
 					break;
 				}
 			}
@@ -578,7 +690,7 @@ int main() {
 		moveTetriminoButtonPress(&tetrimino, buttonsDown);
 		if (current_timestamp() - start > interval) {
 			if (movePieceGravity(&tetrimino) != 0) {
-				tetrimino.shape = select_and_remove(my_characters, &size);
+				tetrimino.shape = 'I';//select_and_remove(my_characters, &size);
 				initializeTetrimino(&tetrimino);
 				if (movementBlocked(&tetrimino, 0, 2*TILE_SIZE) != 0) {
 					return 0;
