@@ -12,6 +12,8 @@ typedef struct Tetrimino {
 	u32 color;
 	Tile tiles[4];
 	int rotationState;
+	int bottom;
+	int top;
 } Tetrimino;
 
 
