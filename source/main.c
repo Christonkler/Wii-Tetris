@@ -16,8 +16,8 @@ static u32 *xfb; // SCREEN BOUNDS ARE 240x320 420 IS THE BOTTOM, 320 IS RIGHT SI
 static GXRModeObj *rmode;
 static int leftX = 160;
 static int bottomY = 100;
-//static char allPieces[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
-//static int sizeAllPieces = sizeof(allPieces);
+//int bottomLeftGridX = leftX - 3*TILE_SIZE;
+//int bottomLeftGridY = bottomY + 19*2*TILE_SIZE;
 //WPAD_BUTTON_2=0x0001
 //WPAD_BUTTON_1=0x0002
 //WPAD_BUTTON_B=0x0004
@@ -139,7 +139,6 @@ void shiftLines(int yPosition) {
 
 
 int clearLines(Tetrimino* tetrimino) {
-	// Start = tetrimino->bottom
 	int currentYPosition = tetrimino->bottom;
 	int linesCleared = 0;
 	int tilesInRow = countTilesInRow(currentYPosition);
@@ -273,7 +272,6 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 			tetrimino->xPosition = leftX;
 			tetrimino->yPosition = bottomY;
 			tetrimino->bottom = bottomY;
-			tetrimino->top = bottomY;
 			break;
 		
 		case 'L':
@@ -289,7 +287,6 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 			tetrimino->xPosition = leftX;
 			tetrimino->yPosition = bottomY;
 			tetrimino->bottom = bottomY;
-			tetrimino->top = bottomY-2*TILE_SIZE;
 			break;
 		
 		case 'O':
@@ -305,7 +302,6 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 			tetrimino->xPosition = leftX+TILE_SIZE;
 			tetrimino->yPosition = bottomY;
 			tetrimino->bottom = bottomY;
-			tetrimino->top = bottomY-2*TILE_SIZE;
 			break;
 		
 		case 'T':
@@ -321,7 +317,6 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 			tetrimino->xPosition = leftX;
 			tetrimino->yPosition = bottomY;
 			tetrimino->bottom = bottomY;
-			tetrimino->top = bottomY-2*TILE_SIZE;
 			break;
 		
 		case 'S':
@@ -337,7 +332,6 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 			tetrimino->xPosition = leftX;
 			tetrimino->yPosition = bottomY;
 			tetrimino->bottom = bottomY;
-			tetrimino->top = bottomY-2*TILE_SIZE;
 			break;
 		
 		case 'J':
@@ -353,7 +347,6 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 			tetrimino->xPosition = leftX;
 			tetrimino->yPosition = bottomY;
 			tetrimino->bottom = bottomY;
-			tetrimino->top = bottomY-2*TILE_SIZE;
 			break;
 		
 		case 'Z':
@@ -369,7 +362,6 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 			tetrimino->xPosition = leftX;
 			tetrimino->yPosition = bottomY;
 			tetrimino->bottom = bottomY;
-			tetrimino->top = bottomY-2*TILE_SIZE;
 			break;
 		
 		default:
@@ -404,7 +396,6 @@ int movementBlocked(Tetrimino* tetrimino, int xPositionChange, int yPositionChan
 
 
 void moveTile(Tile* tile, int xPositionChange, int yPositionChange) {
-	//CHECK IF MOVE IS LEGAL
 	tile->xPosition += xPositionChange;
 	tile->yPosition += yPositionChange;
 	drawSquare(tile->xPosition, tile->yPosition, TILE_SIZE, tile->color);
@@ -412,7 +403,7 @@ void moveTile(Tile* tile, int xPositionChange, int yPositionChange) {
 
 
 int movePieceGravity(Tetrimino* tetrimino) {
-	if ((tetrimino->yPosition > 470-TILE_SIZE) || movementBlocked(tetrimino, 0, 2*TILE_SIZE) != 0) { // Bottom of screen
+	if ((tetrimino->yPosition > 470-TILE_SIZE) || movementBlocked(tetrimino, 0, 2*TILE_SIZE) != 0) { // Bottom of screen is 480
 		return 1;
 	}
 	eraseTetrimino(tetrimino);
@@ -421,7 +412,6 @@ int movePieceGravity(Tetrimino* tetrimino) {
 	}
 	tetrimino->yPosition += 2*TILE_SIZE;
 	tetrimino->bottom += 2*TILE_SIZE;
-	tetrimino->top += 2*TILE_SIZE;
 	return 0;
 }
 
@@ -452,21 +442,10 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 			moveTile(&tetrimino->tiles[i], TILE_SIZE, 0);
 		}
 		tetrimino->xPosition += TILE_SIZE;
-	//} else if (buttonsDown & WPAD_BUTTON_RIGHT) { // UP
-	//	eraseTetrimino(tetrimino);
-	//	for (int i = 0; i < 4; i++) {
-	//		moveTile(&tetrimino->tiles[i], 0, -2*TILE_SIZE);
-	//	}
-	//	tetrimino->yPosition -= 2*TILE_SIZE;
 	}
 	
 	if ((buttonsDown & WPAD_BUTTON_LEFT) && (movementBlocked(tetrimino, 0, 2*TILE_SIZE) == 0)) { // DOWN
-		//eraseTetrimino(tetrimino);
 		movePieceGravity(tetrimino);
-		//for (int i = 0; i < 4; i++) {
-		//	moveTile(&tetrimino->tiles[i], 0, 2*TILE_SIZE);
-		//}
-		//tetrimino->yPosition += 2*TILE_SIZE;
 	}
 	
 	if (buttonsDown & WPAD_BUTTON_2) { // ROTATE RIGHT
@@ -570,23 +549,6 @@ int tetriminoMovesRightOnDownPressTest() {
 }
 
 
-//int tetriminoMovesUpOnRightPressTest() {
-//	Tetrimino tetrimino;
-//	tetrimino.shape = 'T';
-//	initializeTetrimino(&tetrimino);
-//	eraseTetrimino(&tetrimino);
-//	moveTetriminoButtonPress(&tetrimino, 0x0200);
-//	eraseTetrimino(&tetrimino);
-//	
-//	if (tetrimino.yPosition != (bottomY-2*TILE_SIZE)) {
-//		printf("Tetrimino did not move up. Expected position %d but was %d\n", bottomY-2*TILE_SIZE, tetrimino.yPosition);
-//		return 1;
-//	}
-//	
-//	return 0;
-//}
-
-
 int tetriminoMovesDownOnLeftPressTest() {
 	Tetrimino tetrimino;
 	tetrimino.shape = 'T';
@@ -595,7 +557,7 @@ int tetriminoMovesDownOnLeftPressTest() {
 	moveTetriminoButtonPress(&tetrimino, 0x0100);
 	eraseTetrimino(&tetrimino);
 	
-	if (tetrimino.bottom != (bottomY+2*TILE_SIZE) || tetrimino.top != bottomY) {
+	if (tetrimino.bottom != (bottomY+2*TILE_SIZE)) {
 		printf("Tetrimino did not move down. Expected position %d but was %d\n", bottomY+2*TILE_SIZE, tetrimino.yPosition);
 		return 1;
 	}
@@ -696,12 +658,12 @@ int bagOf7RandomizerTest() {
 				iCount++;
 				break;
 			default:
-				printf("YOU FUCKING SUCK AT RANDOMIZERS CHRIS!");
+				printf("YOU SUCK AT RANDOMIZERS CHRIS!");
 				return 1;
 		}
 	}
 	if ((tCount != 10) || (oCount != 10) || (sCount != 10) || (zCount != 10) || (lCount != 10) || (jCount != 10) || (iCount != 10)) {
-		printf("NOT 7 BAG DUMBASS!");
+		printf("NOT 7 BAG YOU IDIOT!");
 		return 1;
 	} else {
 		return 0;
@@ -713,7 +675,6 @@ int run_tests() {
 	int failedTests = 0;
 	failedTests += tetriminoMovesLeftOnUpPressTest();
 	failedTests += tetriminoMovesRightOnDownPressTest();
-	//failedTests += tetriminoMovesUpOnRightPressTest();
 	failedTests += tetriminoMovesDownOnLeftPressTest();
 	failedTests += gravityTest();
 	failedTests += floorTest();
@@ -741,12 +702,9 @@ int main() {
 		printf("Tests Passed!\n");
 	}
 	
-	//int bottomLeftGridX = leftX - 3*TILE_SIZE;
-	//int bottomLeftGridY = bottomY + 19*2*TILE_SIZE;
-	
 	rand();
 	
-    double interval = 200; // Desired interval in seconds
+    double interval = 200;
 	char my_characters[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 	int size = 7;
 	
@@ -756,7 +714,6 @@ int main() {
 	countTilesInRow(bottomY);
 	
 	u16 buttonsDown;
-	//drawSquare(bottomLeftGridX, bottomLeftGridY, TILE_SIZE, 0xFFFFFFFF);
 	
 	while(1) {
 		WPAD_ScanPads();
@@ -781,20 +738,32 @@ int main() {
 			}
 			WPAD_ScanPads();
 			buttonsDown = WPAD_ButtonsDown(0);
+		} else if (buttonsDown & WPAD_BUTTON_HOME) {
+			printf("Total lines cleared: %d\n", linesCleared);
+			printf("Level achieved: %d\n", 1 + linesCleared/10);
+			sleep(5);
+			return 0;
 		}
 		moveTetriminoButtonPress(&tetrimino, buttonsDown);
 		if (current_timestamp() - start > interval) {
 			if (movePieceGravity(&tetrimino) != 0) {
 				linesCleared += clearLines(&tetrimino);
+				interval = 200 - (10* (linesCleared/10));
 				tetrimino.shape = select_and_remove(my_characters, &size);
 				initializeTetrimino(&tetrimino);
 				if (movementBlocked(&tetrimino, 0, 2*TILE_SIZE) != 0) {
+					printf("Total lines cleared: %d\n", linesCleared);
+					printf("Level achieved: %d\n", 1 + linesCleared/10);
+					sleep(5);
 					return 0;
 				}
 			}
 			start = current_timestamp();
 		}
 	}
+	printf("Total lines cleared: %d\n", linesCleared);
+	printf("Level achieved: %d\n", 1 + linesCleared/10);
+	sleep(5);
  
 	return 0;
 }
