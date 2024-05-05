@@ -382,6 +382,30 @@ void initializeTetriminoQueue(Tetrimino* tetrimino, int queuePosition) {
 }
 
 
+void initializeTetriminoHeldPiece(Tetrimino* tetrimino) {
+	initializeTetriminoSetPosition(tetrimino, leftX - 9*TILE_SIZE, bottomY);
+}
+
+
+int holdPiece(Tetrimino* currentTetrimino, Tetrimino* heldTetrimino) {
+	if (heldTetrimino->shape != ' ') { // != NULL
+		char newHoldShape = currentTetrimino->shape;
+		eraseTetrimino(currentTetrimino);
+		currentTetrimino->shape = heldTetrimino->shape;
+		eraseTetrimino(heldTetrimino);
+		heldTetrimino->shape = newHoldShape;
+		initializeTetrimino(currentTetrimino);
+		initializeTetriminoHeldPiece(heldTetrimino);
+		return 0;
+	} else {
+		eraseTetrimino(currentTetrimino);
+		heldTetrimino->shape = currentTetrimino->shape;
+		initializeTetriminoHeldPiece(heldTetrimino);
+		return 2;
+	}
+}
+
+
 
 int movementBlocked(Tetrimino* tetrimino, int xPositionChange, int yPositionChange) {
 //Dylwin
@@ -428,10 +452,10 @@ int movePieceGravity(Tetrimino* tetrimino) {
 }
 
 
-void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
+int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, u16 buttonsDown) {
 	
 	
-	u16 buttonsHeld = WPAD_ButtonsHeld(0);
+	//u16 buttonsHeld = WPAD_ButtonsHeld(0);
 	//u16 buttonsUp = WPAD_ButtonsUp(0);
 	
 	if (buttonsDown & WPAD_BUTTON_B) { // HARD DROP
@@ -440,6 +464,9 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 				break;
 			}
 		}
+		return 1;
+	} else if (buttonsDown & WPAD_BUTTON_A) { // HOLD PIECE
+		return holdPiece(tetrimino, heldTetrimino);
 	}
 	
 	if ((buttonsDown & WPAD_BUTTON_UP) && (movementBlocked(tetrimino, -1*TILE_SIZE, 0) == 0)) {  // LEFT
@@ -465,6 +492,7 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 	} else if (buttonsDown & WPAD_BUTTON_1) { // ROTATE LEFT
 		rotateTetrimino(tetrimino, -1);
 	}
+	return 0;
 }
 
 
@@ -563,7 +591,7 @@ int tetriminoMovesLeftOnUpPressTest() {
 	tetrimino.shape = 'T';
 	initializeTetrimino(&tetrimino);
 	eraseTetrimino(&tetrimino);
-	moveTetriminoButtonPress(&tetrimino, 0x0800);
+	moveTetriminoButtonPress(&tetrimino, NULL, 0x0800);
 	eraseTetrimino(&tetrimino);
 	if (tetrimino.xPosition != (leftX-TILE_SIZE)) {
 		printf("Tetrimino did not move left. Expected position %d but was %d\n", leftX-TILE_SIZE, tetrimino.xPosition);
@@ -579,7 +607,7 @@ int tetriminoMovesRightOnDownPressTest() {
 	tetrimino.shape = 'T';
 	initializeTetrimino(&tetrimino);
 	eraseTetrimino(&tetrimino);
-	moveTetriminoButtonPress(&tetrimino, 0x0400);
+	moveTetriminoButtonPress(&tetrimino, NULL, 0x0400);
 	eraseTetrimino(&tetrimino);
 	
 	if (tetrimino.xPosition != (leftX+TILE_SIZE)) {
@@ -596,7 +624,7 @@ int tetriminoMovesDownOnLeftPressTest() {
 	tetrimino.shape = 'T';
 	initializeTetrimino(&tetrimino);
 	eraseTetrimino(&tetrimino);
-	moveTetriminoButtonPress(&tetrimino, 0x0100);
+	moveTetriminoButtonPress(&tetrimino, NULL, 0x0100);
 	eraseTetrimino(&tetrimino);
 	
 	if (tetrimino.bottom != (bottomY+2*TILE_SIZE)) {
@@ -756,6 +784,9 @@ int main() {
 	Tetrimino nextTetrimino2;
 	Tetrimino nextTetrimino3;
 	Tetrimino nextTetrimino4;
+	Tetrimino heldTetrimino;
+	heldTetrimino.shape = ' ';
+	//initializeTetriminoHeldPiece(&heldTetrimino);
 	currentTetrimino.shape = select_and_remove(my_characters, &size);
 	nextTetrimino1.shape = select_and_remove(my_characters, &size);
 	nextTetrimino2.shape = select_and_remove(my_characters, &size);
@@ -793,9 +824,9 @@ int main() {
 			sleep(5);
 			return 0;
 		}
-		moveTetriminoButtonPress(&currentTetrimino, buttonsDown);
-		if (current_timestamp() - start > interval) {
-			if (movePieceGravity(&currentTetrimino) != 0) {
+		int shouldShiftQueue = moveTetriminoButtonPress(&currentTetrimino, &heldTetrimino, buttonsDown);
+		if ((shouldShiftQueue != 0) || (current_timestamp() - start > interval)) {
+			if ((shouldShiftQueue != 0) || movePieceGravity(&currentTetrimino) != 0) {
 				linesCleared += clearLines(&currentTetrimino);
 				interval = 200 - (10* (linesCleared/10));
 				shiftQueue(&currentTetrimino, &nextTetrimino1, &nextTetrimino2, &nextTetrimino3, &nextTetrimino4, select_and_remove(my_characters, &size));

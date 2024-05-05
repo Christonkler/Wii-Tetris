@@ -20,7 +20,7 @@ void moveTileButtonPress(Tile* tile, u16 buttonsDown);
 
 void initializeTetriminoTiles(Tetrimino* tetrimino);
 
-void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown);
+int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, u16 buttonsDown);
 
 u32 I_COLOR = 0xABCDEF12;
 u32 L_COLOR = 0xFF0000FF;
