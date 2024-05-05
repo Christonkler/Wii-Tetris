@@ -250,6 +250,7 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction) { // No restrictions
 			}
 			break;
 		default:
+			drawTetrimino(tetrimino);
 			break;
 	}
 }
@@ -532,6 +533,18 @@ void shiftQueue(Tetrimino* currentTetrimino, Tetrimino* nextTetrimino1, Tetrimin
 }
 
 
+void startScreen() {
+	u16 buttonsDown;
+	while(1) {
+		WPAD_ScanPads();
+		buttonsDown = WPAD_ButtonsDown(0);
+		if (buttonsDown & WPAD_BUTTON_PLUS) {
+			break;
+		}
+	}
+}
+
+
 
  //
  //
@@ -737,6 +750,7 @@ int main() {
 	char my_characters[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 	int size = 7;
 	
+	// Initialize the queue
 	Tetrimino currentTetrimino;
 	Tetrimino nextTetrimino1;
 	Tetrimino nextTetrimino2;
@@ -756,13 +770,7 @@ int main() {
 	
 	u16 buttonsDown;
 	
-	while(1) {
-		WPAD_ScanPads();
-		buttonsDown = WPAD_ButtonsDown(0);
-		if (buttonsDown & WPAD_BUTTON_PLUS) {
-			break;
-		}
-	}
+	startScreen();
 	int linesCleared = 0;
 	
 	long long start = current_timestamp();
@@ -793,7 +801,7 @@ int main() {
 				shiftQueue(&currentTetrimino, &nextTetrimino1, &nextTetrimino2, &nextTetrimino3, &nextTetrimino4, select_and_remove(my_characters, &size));
 				if (movementBlocked(&currentTetrimino, 0, 2*TILE_SIZE) != 0) {
 					printf("Total lines cleared: %d\n", linesCleared);
-					printf("Level achieved: %d\n", 1 + linesCleared/10);
+					printf("Level achieved: %d\n", 1 + linesCleared/10); // Integer division rounds down
 					sleep(5);
 					return 0;
 				}
