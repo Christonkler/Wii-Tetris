@@ -256,112 +256,112 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction) { // No restrictions
 
 
 
-void initializeTetrimino(Tetrimino* tetrimino) {
+void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bottomYBound) {
 	tetrimino->rotationState=0;
 	switch(tetrimino->shape) {
 		case 'I':
 			tetrimino -> color = I_COLOR;
-			tetrimino->tiles[0] = (Tile){leftX, bottomY, I_COLOR};
+			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, I_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
-			tetrimino->tiles[1] = (Tile){leftX+TILE_SIZE, bottomY, I_COLOR};
+			tetrimino->tiles[1] = (Tile){leftXBound+TILE_SIZE, bottomYBound, I_COLOR};
 			drawSquare(tetrimino->tiles[1].xPosition, tetrimino->tiles[1].yPosition, TILE_SIZE, tetrimino->tiles[1].color);
-			tetrimino->tiles[2] = (Tile){leftX+2*TILE_SIZE, bottomY, I_COLOR};
+			tetrimino->tiles[2] = (Tile){leftXBound+2*TILE_SIZE, bottomYBound, I_COLOR};
 			drawSquare(tetrimino->tiles[2].xPosition, tetrimino->tiles[2].yPosition, TILE_SIZE, tetrimino->tiles[2].color);
-			tetrimino->tiles[3] = (Tile){leftX+3*TILE_SIZE, bottomY, I_COLOR};
+			tetrimino->tiles[3] = (Tile){leftXBound+3*TILE_SIZE, bottomYBound, I_COLOR};
 			drawSquare(tetrimino->tiles[3].xPosition, tetrimino->tiles[3].yPosition, TILE_SIZE, tetrimino->tiles[3].color);
-			tetrimino->xPosition = leftX;
-			tetrimino->yPosition = bottomY;
-			tetrimino->bottom = bottomY;
+			tetrimino->xPosition = leftXBound;
+			tetrimino->yPosition = bottomYBound;
+			tetrimino->bottom = bottomYBound;
 			break;
 		
 		case 'L':
 			tetrimino -> color = L_COLOR;
-			tetrimino->tiles[0] = (Tile){leftX, bottomY, L_COLOR};
+			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, L_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
-			tetrimino->tiles[1] = (Tile){leftX+TILE_SIZE, bottomY, L_COLOR};
+			tetrimino->tiles[1] = (Tile){leftXBound+TILE_SIZE, bottomYBound, L_COLOR};
 			drawSquare(tetrimino->tiles[1].xPosition, tetrimino->tiles[1].yPosition, TILE_SIZE, tetrimino->tiles[1].color);
-			tetrimino->tiles[2] = (Tile){leftX+2*TILE_SIZE, bottomY, L_COLOR};
+			tetrimino->tiles[2] = (Tile){leftXBound+2*TILE_SIZE, bottomYBound, L_COLOR};
 			drawSquare(tetrimino->tiles[2].xPosition, tetrimino->tiles[2].yPosition, TILE_SIZE, tetrimino->tiles[2].color);
-			tetrimino->tiles[3] = (Tile){leftX+2*TILE_SIZE, bottomY-TILE_SIZE*2, L_COLOR};
+			tetrimino->tiles[3] = (Tile){leftXBound+2*TILE_SIZE, bottomYBound-TILE_SIZE*2, L_COLOR};
 			drawSquare(tetrimino->tiles[3].xPosition, tetrimino->tiles[3].yPosition, TILE_SIZE, tetrimino->tiles[3].color);
-			tetrimino->xPosition = leftX;
-			tetrimino->yPosition = bottomY;
-			tetrimino->bottom = bottomY;
+			tetrimino->xPosition = leftXBound;
+			tetrimino->yPosition = bottomYBound;
+			tetrimino->bottom = bottomYBound;
 			break;
 		
 		case 'O':
 			tetrimino -> color = O_COLOR;
-			tetrimino->tiles[0] = (Tile){leftX+TILE_SIZE, bottomY, O_COLOR};
+			tetrimino->tiles[0] = (Tile){leftXBound+TILE_SIZE, bottomYBound, O_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
-			tetrimino->tiles[1] = (Tile){leftX+TILE_SIZE, bottomY-TILE_SIZE*2, O_COLOR};
+			tetrimino->tiles[1] = (Tile){leftXBound+TILE_SIZE, bottomYBound-TILE_SIZE*2, O_COLOR};
 			drawSquare(tetrimino->tiles[1].xPosition, tetrimino->tiles[1].yPosition, TILE_SIZE, tetrimino->tiles[1].color);
-			tetrimino->tiles[2] = (Tile){leftX+2*TILE_SIZE, bottomY, O_COLOR};
+			tetrimino->tiles[2] = (Tile){leftXBound+2*TILE_SIZE, bottomYBound, O_COLOR};
 			drawSquare(tetrimino->tiles[2].xPosition, tetrimino->tiles[2].yPosition, TILE_SIZE, tetrimino->tiles[2].color);
-			tetrimino->tiles[3] = (Tile){leftX+2*TILE_SIZE, bottomY-TILE_SIZE*2, O_COLOR};
+			tetrimino->tiles[3] = (Tile){leftXBound+2*TILE_SIZE, bottomYBound-TILE_SIZE*2, O_COLOR};
 			drawSquare(tetrimino->tiles[3].xPosition, tetrimino->tiles[3].yPosition, TILE_SIZE, tetrimino->tiles[3].color);
-			tetrimino->xPosition = leftX+TILE_SIZE;
-			tetrimino->yPosition = bottomY;
-			tetrimino->bottom = bottomY;
+			tetrimino->xPosition = leftXBound+TILE_SIZE;
+			tetrimino->yPosition = bottomYBound;
+			tetrimino->bottom = bottomYBound;
 			break;
 		
 		case 'T':
 			tetrimino -> color = T_COLOR;
-			tetrimino->tiles[0] = (Tile){leftX, bottomY, T_COLOR};
+			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, T_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
-			tetrimino->tiles[1] = (Tile){leftX+TILE_SIZE, bottomY, T_COLOR};
+			tetrimino->tiles[1] = (Tile){leftXBound+TILE_SIZE, bottomYBound, T_COLOR};
 			drawSquare(tetrimino->tiles[1].xPosition, tetrimino->tiles[1].yPosition, TILE_SIZE, tetrimino->tiles[1].color);
-			tetrimino->tiles[2] = (Tile){leftX+TILE_SIZE, bottomY-TILE_SIZE*2, T_COLOR};
+			tetrimino->tiles[2] = (Tile){leftXBound+TILE_SIZE, bottomYBound-TILE_SIZE*2, T_COLOR};
 			drawSquare(tetrimino->tiles[2].xPosition, tetrimino->tiles[2].yPosition, TILE_SIZE, tetrimino->tiles[2].color);
-			tetrimino->tiles[3] = (Tile){leftX+2*TILE_SIZE, bottomY, T_COLOR};
+			tetrimino->tiles[3] = (Tile){leftXBound+2*TILE_SIZE, bottomYBound, T_COLOR};
 			drawSquare(tetrimino->tiles[3].xPosition, tetrimino->tiles[3].yPosition, TILE_SIZE, tetrimino->tiles[3].color);
-			tetrimino->xPosition = leftX;
-			tetrimino->yPosition = bottomY;
-			tetrimino->bottom = bottomY;
+			tetrimino->xPosition = leftXBound;
+			tetrimino->yPosition = bottomYBound;
+			tetrimino->bottom = bottomYBound;
 			break;
 		
 		case 'S':
 			tetrimino -> color = S_COLOR;
-			tetrimino->tiles[0] = (Tile){leftX, bottomY, S_COLOR};
+			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, S_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
-			tetrimino->tiles[1] = (Tile){leftX+TILE_SIZE, bottomY, S_COLOR};
+			tetrimino->tiles[1] = (Tile){leftXBound+TILE_SIZE, bottomYBound, S_COLOR};
 			drawSquare(tetrimino->tiles[1].xPosition, tetrimino->tiles[1].yPosition, TILE_SIZE, tetrimino->tiles[1].color);
-			tetrimino->tiles[2] = (Tile){leftX+TILE_SIZE, bottomY-TILE_SIZE*2, S_COLOR};
+			tetrimino->tiles[2] = (Tile){leftXBound+TILE_SIZE, bottomYBound-TILE_SIZE*2, S_COLOR};
 			drawSquare(tetrimino->tiles[2].xPosition, tetrimino->tiles[2].yPosition, TILE_SIZE, tetrimino->tiles[2].color);
-			tetrimino->tiles[3] = (Tile){leftX+2*TILE_SIZE, bottomY-TILE_SIZE*2, S_COLOR};
+			tetrimino->tiles[3] = (Tile){leftXBound+2*TILE_SIZE, bottomYBound-TILE_SIZE*2, S_COLOR};
 			drawSquare(tetrimino->tiles[3].xPosition, tetrimino->tiles[3].yPosition, TILE_SIZE, tetrimino->tiles[3].color);
-			tetrimino->xPosition = leftX;
-			tetrimino->yPosition = bottomY;
-			tetrimino->bottom = bottomY;
+			tetrimino->xPosition = leftXBound;
+			tetrimino->yPosition = bottomYBound;
+			tetrimino->bottom = bottomYBound;
 			break;
 		
 		case 'J':
 			tetrimino -> color = J_COLOR;
-			tetrimino->tiles[0] = (Tile){leftX, bottomY, J_COLOR};
+			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, J_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
-			tetrimino->tiles[1] = (Tile){leftX, bottomY-2*TILE_SIZE, J_COLOR};
+			tetrimino->tiles[1] = (Tile){leftXBound, bottomYBound-2*TILE_SIZE, J_COLOR};
 			drawSquare(tetrimino->tiles[1].xPosition, tetrimino->tiles[1].yPosition, TILE_SIZE, tetrimino->tiles[1].color);
-			tetrimino->tiles[2] = (Tile){leftX+TILE_SIZE, bottomY, J_COLOR};
+			tetrimino->tiles[2] = (Tile){leftXBound+TILE_SIZE, bottomYBound, J_COLOR};
 			drawSquare(tetrimino->tiles[2].xPosition, tetrimino->tiles[2].yPosition, TILE_SIZE, tetrimino->tiles[2].color);
-			tetrimino->tiles[3] = (Tile){leftX+2*TILE_SIZE, bottomY, J_COLOR};
+			tetrimino->tiles[3] = (Tile){leftXBound+2*TILE_SIZE, bottomYBound, J_COLOR};
 			drawSquare(tetrimino->tiles[3].xPosition, tetrimino->tiles[3].yPosition, TILE_SIZE, tetrimino->tiles[3].color);
-			tetrimino->xPosition = leftX;
-			tetrimino->yPosition = bottomY;
-			tetrimino->bottom = bottomY;
+			tetrimino->xPosition = leftXBound;
+			tetrimino->yPosition = bottomYBound;
+			tetrimino->bottom = bottomYBound;
 			break;
 		
 		case 'Z':
 			tetrimino -> color = Z_COLOR;
-			tetrimino->tiles[0] = (Tile){leftX, bottomY-2*TILE_SIZE, Z_COLOR};
+			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound-2*TILE_SIZE, Z_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
-			tetrimino->tiles[1] = (Tile){leftX+TILE_SIZE, bottomY, Z_COLOR};
+			tetrimino->tiles[1] = (Tile){leftXBound+TILE_SIZE, bottomYBound, Z_COLOR};
 			drawSquare(tetrimino->tiles[1].xPosition, tetrimino->tiles[1].yPosition, TILE_SIZE, tetrimino->tiles[1].color);
-			tetrimino->tiles[2] = (Tile){leftX+TILE_SIZE, bottomY-TILE_SIZE*2, Z_COLOR};
+			tetrimino->tiles[2] = (Tile){leftXBound+TILE_SIZE, bottomYBound-TILE_SIZE*2, Z_COLOR};
 			drawSquare(tetrimino->tiles[2].xPosition, tetrimino->tiles[2].yPosition, TILE_SIZE, tetrimino->tiles[2].color);
-			tetrimino->tiles[3] = (Tile){leftX+2*TILE_SIZE, bottomY, Z_COLOR};
+			tetrimino->tiles[3] = (Tile){leftXBound+2*TILE_SIZE, bottomYBound, Z_COLOR};
 			drawSquare(tetrimino->tiles[3].xPosition, tetrimino->tiles[3].yPosition, TILE_SIZE, tetrimino->tiles[3].color);
-			tetrimino->xPosition = leftX;
-			tetrimino->yPosition = bottomY;
-			tetrimino->bottom = bottomY;
+			tetrimino->xPosition = leftXBound;
+			tetrimino->yPosition = bottomYBound;
+			tetrimino->bottom = bottomYBound;
 			break;
 		
 		default:
@@ -371,8 +371,19 @@ void initializeTetrimino(Tetrimino* tetrimino) {
 }
 
 
+void initializeTetrimino(Tetrimino* tetrimino) {
+	initializeTetriminoSetPosition(tetrimino, leftX, bottomY);
+}
+
+
+void initializeTetriminoQueue(Tetrimino* tetrimino, int queuePosition) {
+	initializeTetriminoSetPosition(tetrimino, leftX + 10*TILE_SIZE, bottomY + (queuePosition-1)*8*TILE_SIZE);
+}
+
+
 
 int movementBlocked(Tetrimino* tetrimino, int xPositionChange, int yPositionChange) {
+//Dylwin
 	int newXPosition;
 	int newYPosition;
 	for (int i = 0; i < 4; i++) {
@@ -419,7 +430,7 @@ int movePieceGravity(Tetrimino* tetrimino) {
 void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 	
 	
-	//u16 buttonsHeld = WPAD_ButtonsHeld(0);
+	u16 buttonsHeld = WPAD_ButtonsHeld(0);
 	//u16 buttonsUp = WPAD_ButtonsUp(0);
 	
 	if (buttonsDown & WPAD_BUTTON_B) { // HARD DROP
@@ -436,7 +447,7 @@ void moveTetriminoButtonPress(Tetrimino* tetrimino, u16 buttonsDown) {
 			moveTile(&tetrimino->tiles[i], -1*TILE_SIZE, 0);
 		}
 		tetrimino->xPosition -= TILE_SIZE;
-	} else if ((buttonsDown & WPAD_BUTTON_DOWN) && (movementBlocked(tetrimino, TILE_SIZE, 0) == 0)) { // RIGHT
+	} else if (((buttonsDown & WPAD_BUTTON_DOWN)) && (movementBlocked(tetrimino, TILE_SIZE, 0) == 0)) { // RIGHT
 		eraseTetrimino(tetrimino);
 		for (int i = 0; i < 4; i++) {
 			moveTile(&tetrimino->tiles[i], TILE_SIZE, 0);
@@ -500,6 +511,24 @@ char select_and_remove(char arr[], int* size) {
     (*size)--;
 
     return selected_character;
+}
+
+
+void shiftQueue(Tetrimino* currentTetrimino, Tetrimino* nextTetrimino1, Tetrimino* nextTetrimino2, Tetrimino* nextTetrimino3, Tetrimino* nextTetrimino4, char newShape) {
+	currentTetrimino->shape = nextTetrimino1->shape;
+	initializeTetrimino(currentTetrimino);
+	eraseTetrimino(nextTetrimino1);
+	nextTetrimino1->shape = nextTetrimino2->shape;
+	initializeTetriminoQueue(nextTetrimino1, 1);
+	eraseTetrimino(nextTetrimino2);
+	nextTetrimino2->shape = nextTetrimino3->shape;
+	initializeTetriminoQueue(nextTetrimino2, 2);
+	eraseTetrimino(nextTetrimino3);
+	nextTetrimino3->shape = nextTetrimino4->shape;
+	initializeTetriminoQueue(nextTetrimino3, 3);
+	eraseTetrimino(nextTetrimino4);
+	nextTetrimino4->shape = newShape;
+	initializeTetriminoQueue(nextTetrimino4, 4);
 }
 
 
@@ -708,9 +737,21 @@ int main() {
 	char my_characters[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 	int size = 7;
 	
-	Tetrimino tetrimino;
-	tetrimino.shape = select_and_remove(my_characters, &size);
-	initializeTetrimino(&tetrimino);
+	Tetrimino currentTetrimino;
+	Tetrimino nextTetrimino1;
+	Tetrimino nextTetrimino2;
+	Tetrimino nextTetrimino3;
+	Tetrimino nextTetrimino4;
+	currentTetrimino.shape = select_and_remove(my_characters, &size);
+	nextTetrimino1.shape = select_and_remove(my_characters, &size);
+	nextTetrimino2.shape = select_and_remove(my_characters, &size);
+	nextTetrimino3.shape = select_and_remove(my_characters, &size);
+	nextTetrimino4.shape = select_and_remove(my_characters, &size);
+	initializeTetrimino(&currentTetrimino);
+	initializeTetriminoQueue(&nextTetrimino1, 1);
+	initializeTetriminoQueue(&nextTetrimino2, 2);
+	initializeTetriminoQueue(&nextTetrimino3, 3);
+	initializeTetriminoQueue(&nextTetrimino4, 4);
 	countTilesInRow(bottomY);
 	
 	u16 buttonsDown;
@@ -744,14 +785,13 @@ int main() {
 			sleep(5);
 			return 0;
 		}
-		moveTetriminoButtonPress(&tetrimino, buttonsDown);
+		moveTetriminoButtonPress(&currentTetrimino, buttonsDown);
 		if (current_timestamp() - start > interval) {
-			if (movePieceGravity(&tetrimino) != 0) {
-				linesCleared += clearLines(&tetrimino);
+			if (movePieceGravity(&currentTetrimino) != 0) {
+				linesCleared += clearLines(&currentTetrimino);
 				interval = 200 - (10* (linesCleared/10));
-				tetrimino.shape = select_and_remove(my_characters, &size);
-				initializeTetrimino(&tetrimino);
-				if (movementBlocked(&tetrimino, 0, 2*TILE_SIZE) != 0) {
+				shiftQueue(&currentTetrimino, &nextTetrimino1, &nextTetrimino2, &nextTetrimino3, &nextTetrimino4, select_and_remove(my_characters, &size));
+				if (movementBlocked(&currentTetrimino, 0, 2*TILE_SIZE) != 0) {
 					printf("Total lines cleared: %d\n", linesCleared);
 					printf("Level achieved: %d\n", 1 + linesCleared/10);
 					sleep(5);

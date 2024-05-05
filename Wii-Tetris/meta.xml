@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <app version="1.0">
 <name>Wii Tetris</name>
 <coder>Christonkler</coder>
@@ -5,4 +6,5 @@
 <release_date>20240426220000</release_date>
 <short_description>Tetris Clone</short_description>
 <long_description>Press + to start, 1 and 2 rotate, and B to hard drop</long_description>
+<ahb_access/>
 </app>
