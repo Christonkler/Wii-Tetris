@@ -16,6 +16,7 @@ static u32 *xfb; // SCREEN BOUNDS ARE 240x320 420 IS THE BOTTOM, 320 IS RIGHT SI
 static GXRModeObj *rmode;
 static int leftX = 160;
 static int bottomY = 100;
+static int pieceHeld = 0;
 //int bottomLeftGridX = leftX - 3*TILE_SIZE;
 //int bottomLeftGridY = bottomY + 19*2*TILE_SIZE;
 //WPAD_BUTTON_2=0x0001
@@ -168,8 +169,11 @@ int clearLines(Tetrimino* tetrimino) {
 
 
 
-void rotateTetrimino(Tetrimino* tetrimino, int direction) { // No restrictions
-	eraseTetrimino(tetrimino);
+
+void rotateTetrimino(Tetrimino* tetrimino, int direction, int shouldErase) { // No restrictions
+	if (shouldErase == 0) {
+		eraseTetrimino(tetrimino);
+	}
 	switch(tetrimino->shape) {
 		case 'T':
 			if (direction == -1) {
@@ -179,7 +183,6 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction) { // No restrictions
 				tetrimino->tiles[i/2].xPosition += T_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
 				tetrimino->tiles[i/2].yPosition += T_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
 			}
-			drawTetrimino(tetrimino);
 			if (direction == 1) {
 				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
 			}
@@ -192,7 +195,6 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction) { // No restrictions
 				tetrimino->tiles[i/2].xPosition += L_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
 				tetrimino->tiles[i/2].yPosition += L_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
 			}
-			drawTetrimino(tetrimino);
 			if (direction == 1) {
 				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
 			}
@@ -205,7 +207,6 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction) { // No restrictions
 				tetrimino->tiles[i/2].xPosition += J_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
 				tetrimino->tiles[i/2].yPosition += J_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
 			}
-			drawTetrimino(tetrimino);
 			if (direction == 1) {
 				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
 			}
@@ -218,7 +219,6 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction) { // No restrictions
 				tetrimino->tiles[i/2].xPosition += S_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
 				tetrimino->tiles[i/2].yPosition += S_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
 			}
-			drawTetrimino(tetrimino);
 			if (direction == 1) {
 				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
 			}
@@ -231,7 +231,6 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction) { // No restrictions
 				tetrimino->tiles[i/2].xPosition += Z_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
 				tetrimino->tiles[i/2].yPosition += Z_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
 			}
-			drawTetrimino(tetrimino);
 			if (direction == 1) {
 				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
 			}
@@ -244,14 +243,17 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction) { // No restrictions
 				tetrimino->tiles[i/2].xPosition += I_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
 				tetrimino->tiles[i/2].yPosition += I_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
 			}
-			drawTetrimino(tetrimino);
 			if (direction == 1) {
 				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
 			}
 			break;
 		default:
-			drawTetrimino(tetrimino);
 			break;
+	}
+	if (preventRotationCollision(tetrimino, direction) != 0) {
+		rotateTetrimino(tetrimino, -1*direction, 1);
+	} else {
+		drawTetrimino(tetrimino);
 	}
 }
 
@@ -408,7 +410,6 @@ int holdPiece(Tetrimino* currentTetrimino, Tetrimino* heldTetrimino) {
 
 
 int movementBlocked(Tetrimino* tetrimino, int xPositionChange, int yPositionChange) {
-//Dylwin
 	int newXPosition;
 	int newYPosition;
 	for (int i = 0; i < 4; i++) {
@@ -434,8 +435,40 @@ int movementBlocked(Tetrimino* tetrimino, int xPositionChange, int yPositionChan
 void moveTile(Tile* tile, int xPositionChange, int yPositionChange) {
 	tile->xPosition += xPositionChange;
 	tile->yPosition += yPositionChange;
-	drawSquare(tile->xPosition, tile->yPosition, TILE_SIZE, tile->color);
 }
+
+
+
+void shiftTetrimino(Tetrimino* tetrimino, int xDirection, int yDirection) {
+	for (int i = 0; i < 4; i++) {
+		moveTile(&tetrimino->tiles[i], xDirection*TILE_SIZE, yDirection*2*TILE_SIZE);
+	}
+	tetrimino->xPosition += xDirection*TILE_SIZE;
+	tetrimino->yPosition += yDirection*2*TILE_SIZE;
+	tetrimino->bottom += yDirection*2*TILE_SIZE;
+}
+
+
+
+int preventRotationCollision(Tetrimino* tetrimino, int direction) { // We draw if this returns 0, tetrimino already erased.
+	int blocked = 0;
+	for (int i = 0; i < 4; i++) {
+		if (xfb[(tetrimino->tiles[i].yPosition * rmode->fbWidth)/2 + tetrimino->tiles[i].xPosition] != BACKGROUND_COLOR) {
+			blocked = 1;
+		}
+	}
+	
+	if ((blocked == 1) && (movementBlocked(tetrimino, -1*direction, 0) == 0)) { // Shifting it once in the opposite direction is fine
+		shiftTetrimino(tetrimino, -1*direction, 0);
+		return 0;
+	} else if ((blocked == 1) && (movementBlocked(tetrimino, direction, 0) == 0)) {
+		shiftTetrimino(tetrimino, 1*direction, 0);
+		return 0;
+	}
+	
+	return blocked;
+}
+
 
 
 int movePieceGravity(Tetrimino* tetrimino) {
@@ -446,6 +479,7 @@ int movePieceGravity(Tetrimino* tetrimino) {
 	for (int i = 0; i < 4; i++) {
 		moveTile(&tetrimino->tiles[i], 0, 2*TILE_SIZE);
 	}
+	drawTetrimino(tetrimino);
 	tetrimino->yPosition += 2*TILE_SIZE;
 	tetrimino->bottom += 2*TILE_SIZE;
 	return 0;
@@ -465,32 +499,30 @@ int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, u16
 			}
 		}
 		return 1;
-	} else if (buttonsDown & WPAD_BUTTON_A) { // HOLD PIECE
+	} else if ((buttonsDown & WPAD_BUTTON_A) && pieceHeld == 0) { // HOLD PIECE
+		pieceHeld++;
 		return holdPiece(tetrimino, heldTetrimino);
 	}
 	
 	if ((buttonsDown & WPAD_BUTTON_UP) && (movementBlocked(tetrimino, -1*TILE_SIZE, 0) == 0)) {  // LEFT
 		eraseTetrimino(tetrimino);
-		for (int i = 0; i < 4; i++) {
-			moveTile(&tetrimino->tiles[i], -1*TILE_SIZE, 0);
-		}
-		tetrimino->xPosition -= TILE_SIZE;
+		shiftTetrimino(tetrimino, -1, 0);
+		drawTetrimino(tetrimino);
 	} else if (((buttonsDown & WPAD_BUTTON_DOWN)) && (movementBlocked(tetrimino, TILE_SIZE, 0) == 0)) { // RIGHT
 		eraseTetrimino(tetrimino);
-		for (int i = 0; i < 4; i++) {
-			moveTile(&tetrimino->tiles[i], TILE_SIZE, 0);
-		}
-		tetrimino->xPosition += TILE_SIZE;
+		shiftTetrimino(tetrimino, 1, 0);
+		drawTetrimino(tetrimino);
 	}
 	
 	if ((buttonsDown & WPAD_BUTTON_LEFT) && (movementBlocked(tetrimino, 0, 2*TILE_SIZE) == 0)) { // DOWN
 		movePieceGravity(tetrimino);
+		drawTetrimino(tetrimino);
 	}
 	
 	if (buttonsDown & WPAD_BUTTON_2) { // ROTATE RIGHT
-		rotateTetrimino(tetrimino, 1);
+		rotateTetrimino(tetrimino, 1, 0);
 	} else if (buttonsDown & WPAD_BUTTON_1) { // ROTATE LEFT
-		rotateTetrimino(tetrimino, -1);
+		rotateTetrimino(tetrimino, -1, 0);
 	}
 	return 0;
 }
@@ -786,7 +818,6 @@ int main() {
 	Tetrimino nextTetrimino4;
 	Tetrimino heldTetrimino;
 	heldTetrimino.shape = ' ';
-	//initializeTetriminoHeldPiece(&heldTetrimino);
 	currentTetrimino.shape = select_and_remove(my_characters, &size);
 	nextTetrimino1.shape = select_and_remove(my_characters, &size);
 	nextTetrimino2.shape = select_and_remove(my_characters, &size);
@@ -830,6 +861,7 @@ int main() {
 				linesCleared += clearLines(&currentTetrimino);
 				interval = 200 - (10* (linesCleared/10));
 				shiftQueue(&currentTetrimino, &nextTetrimino1, &nextTetrimino2, &nextTetrimino3, &nextTetrimino4, select_and_remove(my_characters, &size));
+				pieceHeld = 0;
 				if (movementBlocked(&currentTetrimino, 0, 2*TILE_SIZE) != 0) {
 					printf("Total lines cleared: %d\n", linesCleared);
 					printf("Level achieved: %d\n", 1 + linesCleared/10); // Integer division rounds down

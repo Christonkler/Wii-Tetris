@@ -22,6 +22,8 @@ void initializeTetriminoTiles(Tetrimino* tetrimino);
 
 int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, u16 buttonsDown);
 
+int preventRotationCollision(Tetrimino* tetrimino, int direction);
+
 u32 I_COLOR = 0xABCDEF12;
 u32 L_COLOR = 0xFF0000FF;
 u32 J_COLOR = 0xFF34567;
