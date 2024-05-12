@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<app version="1.1">
+<name>Wii Tetris</name>
+<coder>Christonkler</coder>
+<version>1.1</version>
+<release_date>20240426220000</release_date>
+<short_description>Tetris Clone</short_description>
+<long_description>Tetris for Wii. Press + to start, 1 and 2 rotate, A to hold, and B to hard drop</long_description>
+<ahb_access/>
+</app>
