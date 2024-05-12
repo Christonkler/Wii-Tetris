@@ -18,6 +18,7 @@ static int leftX = 160;
 static int bottomY = 100;
 static int pieceHeld = 0;
 static long long lastButtonPress = 0;
+static long long lockTimeStart = 0;
 //int bottomLeftGridX = leftX - 3*TILE_SIZE;
 //int bottomLeftGridY = bottomY + 19*2*TILE_SIZE;
 //WPAD_BUTTON_2=0x0001
@@ -439,6 +440,7 @@ int movePieceGravity(Tetrimino* tetrimino) {
 	drawTetrimino(tetrimino);
 	tetrimino->yPosition += 2*TILE_SIZE;
 	tetrimino->bottom += 2*TILE_SIZE;
+	lockTimeStart = current_timestamp();
 	return 0;
 }
 
@@ -461,19 +463,19 @@ int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, u16
 		return holdPiece(tetrimino, heldTetrimino);
 	}
 	
-	if (((buttonsDown & WPAD_BUTTON_UP) || ((buttonsHeld & WPAD_BUTTON_UP) && (current_timestamp() - lastButtonPress > 100))) && (movementBlocked(tetrimino, -1*TILE_SIZE, 0) == 0)) {  // LEFT
+	if (((buttonsDown & WPAD_BUTTON_UP) || ((buttonsHeld & WPAD_BUTTON_UP) && (current_timestamp() - lastButtonPress > 120))) && (movementBlocked(tetrimino, -1*TILE_SIZE, 0) == 0)) {  // LEFT
 		eraseTetrimino(tetrimino);
 		shiftTetrimino(tetrimino, -1, 0);
 		drawTetrimino(tetrimino);
 		lastButtonPress = current_timestamp();
-	} else if (((buttonsDown & WPAD_BUTTON_DOWN) || ((buttonsHeld & WPAD_BUTTON_DOWN) && (current_timestamp() - lastButtonPress > 100))) && (movementBlocked(tetrimino, TILE_SIZE, 0) == 0)) { // RIGHT
+	} else if (((buttonsDown & WPAD_BUTTON_DOWN) || ((buttonsHeld & WPAD_BUTTON_DOWN) && (current_timestamp() - lastButtonPress > 120))) && (movementBlocked(tetrimino, TILE_SIZE, 0) == 0)) { // RIGHT
 		eraseTetrimino(tetrimino);
 		shiftTetrimino(tetrimino, 1, 0);
 		drawTetrimino(tetrimino);
 		lastButtonPress = current_timestamp();
 	}
 	
-	if ((buttonsDown & WPAD_BUTTON_LEFT || ((buttonsHeld & WPAD_BUTTON_LEFT) && (current_timestamp() - lastButtonPress > 100))) && (movementBlocked(tetrimino, 0, 2*TILE_SIZE) == 0)) { // DOWN
+	if ((buttonsDown & WPAD_BUTTON_LEFT || ((buttonsHeld & WPAD_BUTTON_LEFT) && (current_timestamp() - lastButtonPress > 120))) && (movementBlocked(tetrimino, 0, 2*TILE_SIZE) == 0)) { // DOWN
 		movePieceGravity(tetrimino);
 		drawTetrimino(tetrimino);
 		lastButtonPress = current_timestamp();
@@ -813,7 +815,7 @@ int main() {
 		}
 		int shouldShiftQueue = moveTetriminoButtonPress(&currentTetrimino, &heldTetrimino, buttonsDown);
 		if ((shouldShiftQueue != 0) || (current_timestamp() - start > interval)) {
-			if ((shouldShiftQueue != 0) || movePieceGravity(&currentTetrimino) != 0) {
+			if (((shouldShiftQueue != 0)) || ((movePieceGravity(&currentTetrimino) != 0) && (current_timestamp() - lockTimeStart > 3*interval))) {
 				linesCleared += clearLines(&currentTetrimino);
 				interval = 200 - (10* (linesCleared/10));
 				shiftQueue(&currentTetrimino, &nextTetrimino1, &nextTetrimino2, &nextTetrimino3, &nextTetrimino4, select_and_remove(my_characters, &size));
