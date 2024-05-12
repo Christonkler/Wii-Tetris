@@ -171,85 +171,26 @@ int clearLines(Tetrimino* tetrimino) {
 
 
 void rotateTetrimino(Tetrimino* tetrimino, int direction, int shouldErase) { // No restrictions
-	if (shouldErase == 0) {
+	if (tetrimino->shape == 'O') {
+		return;
+	}
+
+	if (shouldErase == 0) { // Used for checking for collisions on rotations
 		eraseTetrimino(tetrimino);
 	}
-	switch(tetrimino->shape) {
-		case 'T':
-			if (direction == -1) {
-				tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
-			}
-			for (int i = 0; i < 8; i+=2) {
-				tetrimino->tiles[i/2].xPosition += T_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
-				tetrimino->tiles[i/2].yPosition += T_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
-			}
-			if (direction == 1) {
-				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
-			}
-			break;
-		case 'L':
-			if (direction == -1) {
-				tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
-			}
-			for (int i = 0; i < 8; i+=2) {
-				tetrimino->tiles[i/2].xPosition += L_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
-				tetrimino->tiles[i/2].yPosition += L_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
-			}
-			if (direction == 1) {
-				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
-			}
-			break;
-		case 'J':
-			if (direction == -1) {
-				tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
-			}
-			for (int i = 0; i < 8; i+=2) {
-				tetrimino->tiles[i/2].xPosition += J_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
-				tetrimino->tiles[i/2].yPosition += J_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
-			}
-			if (direction == 1) {
-				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
-			}
-			break;
-		case 'S':
-			if (direction == -1) {
-				tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
-			}
-			for (int i = 0; i < 8; i+=2) {
-				tetrimino->tiles[i/2].xPosition += S_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
-				tetrimino->tiles[i/2].yPosition += S_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
-			}
-			if (direction == 1) {
-				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
-			}
-			break;
-		case 'Z':
-			if (direction == -1) {
-				tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
-			}
-			for (int i = 0; i < 8; i+=2) {
-				tetrimino->tiles[i/2].xPosition += Z_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
-				tetrimino->tiles[i/2].yPosition += Z_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
-			}
-			if (direction == 1) {
-				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
-			}
-			break;
-		case 'I':
-			if (direction == -1) {
-				tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
-			}
-			for (int i = 0; i < 8; i+=2) {
-				tetrimino->tiles[i/2].xPosition += I_ROTATIONS[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
-				tetrimino->tiles[i/2].yPosition += I_ROTATIONS[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
-			}
-			if (direction == 1) {
-				tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
-			}
-			break;
-		default:
-			break;
+	if (direction == -1) {
+		tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
 	}
+
+	for (int i = 0; i < 8; i+=2) {
+				tetrimino->tiles[i/2].xPosition += tetrimino->rotationArray[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
+				tetrimino->tiles[i/2].yPosition += tetrimino->rotationArray[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
+	}
+
+	if (direction == 1) {
+		tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
+	}
+	
 	if (preventRotationCollision(tetrimino, direction) != 0) {
 		rotateTetrimino(tetrimino, -1*direction, 1);
 	} else {
@@ -275,6 +216,8 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			tetrimino->xPosition = leftXBound;
 			tetrimino->yPosition = bottomYBound;
 			tetrimino->bottom = bottomYBound;
+			// tetrimino->rotationArray = I_ROTATIONS;
+			memcpy(tetrimino->rotationArray, I_ROTATIONS, sizeof(I_ROTATIONS));
 			break;
 		
 		case 'L':
@@ -290,6 +233,8 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			tetrimino->xPosition = leftXBound;
 			tetrimino->yPosition = bottomYBound;
 			tetrimino->bottom = bottomYBound;
+			// tetrimino->rotationArray = L_ROTATIONS;
+			memcpy(tetrimino->rotationArray, L_ROTATIONS, sizeof(L_ROTATIONS));
 			break;
 		
 		case 'O':
@@ -320,6 +265,8 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			tetrimino->xPosition = leftXBound;
 			tetrimino->yPosition = bottomYBound;
 			tetrimino->bottom = bottomYBound;
+			// tetrimino->rotationArray = T_ROTATIONS;
+			memcpy(tetrimino->rotationArray, T_ROTATIONS, sizeof(T_ROTATIONS));
 			break;
 		
 		case 'S':
@@ -335,6 +282,8 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			tetrimino->xPosition = leftXBound;
 			tetrimino->yPosition = bottomYBound;
 			tetrimino->bottom = bottomYBound;
+			// tetrimino->rotationArray = S_ROTATIONS;
+			memcpy(tetrimino->rotationArray, S_ROTATIONS, sizeof(S_ROTATIONS));
 			break;
 		
 		case 'J':
@@ -350,6 +299,8 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			tetrimino->xPosition = leftXBound;
 			tetrimino->yPosition = bottomYBound;
 			tetrimino->bottom = bottomYBound;
+			// tetrimino->rotationArray = J_ROTATIONS;
+			memcpy(tetrimino->rotationArray, J_ROTATIONS, sizeof(J_ROTATIONS));
 			break;
 		
 		case 'Z':
@@ -365,6 +316,8 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			tetrimino->xPosition = leftXBound;
 			tetrimino->yPosition = bottomYBound;
 			tetrimino->bottom = bottomYBound;
+			// tetrimino->rotationArray = Z_ROTATIONS;
+			memcpy(tetrimino->rotationArray, Z_ROTATIONS, sizeof(Z_ROTATIONS));
 			break;
 		
 		default:

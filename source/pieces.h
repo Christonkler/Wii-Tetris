@@ -13,6 +13,7 @@ typedef struct Tetrimino {
 	Tile tiles[4];
 	int rotationState;
 	int bottom;
+	int rotationArray[32];
 } Tetrimino;
 
 
