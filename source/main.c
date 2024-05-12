@@ -17,6 +17,7 @@ static GXRModeObj *rmode;
 static int leftX = 160;
 static int bottomY = 100;
 static int pieceHeld = 0;
+static long long lastButtonPress = 0;
 //int bottomLeftGridX = leftX - 3*TILE_SIZE;
 //int bottomLeftGridY = bottomY + 19*2*TILE_SIZE;
 //WPAD_BUTTON_2=0x0001
@@ -58,6 +59,15 @@ void initializeGraphics() {
 	VIDEO_WaitVSync();
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
 }
+
+
+
+long long current_timestamp() {
+    struct timeval te;
+    gettimeofday(&te, NULL);
+    return te.tv_sec * 1000LL + te.tv_usec / 1000;
+}
+
 
 
 void drawSquare(int startX, int startY, int squareSize, u32 color) {
@@ -190,7 +200,7 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction, int shouldErase) { // 
 	if (direction == 1) {
 		tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
 	}
-	
+
 	if (preventRotationCollision(tetrimino, direction) != 0) {
 		rotateTetrimino(tetrimino, -1*direction, 1);
 	} else {
@@ -216,7 +226,6 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			tetrimino->xPosition = leftXBound;
 			tetrimino->yPosition = bottomYBound;
 			tetrimino->bottom = bottomYBound;
-			// tetrimino->rotationArray = I_ROTATIONS;
 			memcpy(tetrimino->rotationArray, I_ROTATIONS, sizeof(I_ROTATIONS));
 			break;
 		
@@ -233,7 +242,6 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			tetrimino->xPosition = leftXBound;
 			tetrimino->yPosition = bottomYBound;
 			tetrimino->bottom = bottomYBound;
-			// tetrimino->rotationArray = L_ROTATIONS;
 			memcpy(tetrimino->rotationArray, L_ROTATIONS, sizeof(L_ROTATIONS));
 			break;
 		
@@ -265,7 +273,6 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			tetrimino->xPosition = leftXBound;
 			tetrimino->yPosition = bottomYBound;
 			tetrimino->bottom = bottomYBound;
-			// tetrimino->rotationArray = T_ROTATIONS;
 			memcpy(tetrimino->rotationArray, T_ROTATIONS, sizeof(T_ROTATIONS));
 			break;
 		
@@ -282,7 +289,6 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			tetrimino->xPosition = leftXBound;
 			tetrimino->yPosition = bottomYBound;
 			tetrimino->bottom = bottomYBound;
-			// tetrimino->rotationArray = S_ROTATIONS;
 			memcpy(tetrimino->rotationArray, S_ROTATIONS, sizeof(S_ROTATIONS));
 			break;
 		
@@ -299,7 +305,6 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			tetrimino->xPosition = leftXBound;
 			tetrimino->yPosition = bottomYBound;
 			tetrimino->bottom = bottomYBound;
-			// tetrimino->rotationArray = J_ROTATIONS;
 			memcpy(tetrimino->rotationArray, J_ROTATIONS, sizeof(J_ROTATIONS));
 			break;
 		
@@ -316,7 +321,6 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			tetrimino->xPosition = leftXBound;
 			tetrimino->yPosition = bottomYBound;
 			tetrimino->bottom = bottomYBound;
-			// tetrimino->rotationArray = Z_ROTATIONS;
 			memcpy(tetrimino->rotationArray, Z_ROTATIONS, sizeof(Z_ROTATIONS));
 			break;
 		
@@ -442,7 +446,7 @@ int movePieceGravity(Tetrimino* tetrimino) {
 int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, u16 buttonsDown) {
 	
 	
-	//u16 buttonsHeld = WPAD_ButtonsHeld(0);
+	u16 buttonsHeld = WPAD_ButtonsHeld(0);
 	//u16 buttonsUp = WPAD_ButtonsUp(0);
 	
 	if (buttonsDown & WPAD_BUTTON_B) { // HARD DROP
@@ -457,19 +461,22 @@ int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, u16
 		return holdPiece(tetrimino, heldTetrimino);
 	}
 	
-	if ((buttonsDown & WPAD_BUTTON_UP) && (movementBlocked(tetrimino, -1*TILE_SIZE, 0) == 0)) {  // LEFT
+	if (((buttonsDown & WPAD_BUTTON_UP) || ((buttonsHeld & WPAD_BUTTON_UP) && (current_timestamp() - lastButtonPress > 100))) && (movementBlocked(tetrimino, -1*TILE_SIZE, 0) == 0)) {  // LEFT
 		eraseTetrimino(tetrimino);
 		shiftTetrimino(tetrimino, -1, 0);
 		drawTetrimino(tetrimino);
-	} else if (((buttonsDown & WPAD_BUTTON_DOWN)) && (movementBlocked(tetrimino, TILE_SIZE, 0) == 0)) { // RIGHT
+		lastButtonPress = current_timestamp();
+	} else if (((buttonsDown & WPAD_BUTTON_DOWN) || ((buttonsHeld & WPAD_BUTTON_DOWN) && (current_timestamp() - lastButtonPress > 100))) && (movementBlocked(tetrimino, TILE_SIZE, 0) == 0)) { // RIGHT
 		eraseTetrimino(tetrimino);
 		shiftTetrimino(tetrimino, 1, 0);
 		drawTetrimino(tetrimino);
+		lastButtonPress = current_timestamp();
 	}
 	
-	if ((buttonsDown & WPAD_BUTTON_LEFT) && (movementBlocked(tetrimino, 0, 2*TILE_SIZE) == 0)) { // DOWN
+	if ((buttonsDown & WPAD_BUTTON_LEFT || ((buttonsHeld & WPAD_BUTTON_LEFT) && (current_timestamp() - lastButtonPress > 100))) && (movementBlocked(tetrimino, 0, 2*TILE_SIZE) == 0)) { // DOWN
 		movePieceGravity(tetrimino);
 		drawTetrimino(tetrimino);
+		lastButtonPress = current_timestamp();
 	}
 	
 	if (buttonsDown & WPAD_BUTTON_2) { // ROTATE RIGHT
@@ -495,11 +502,7 @@ int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, u16
 
 
 
-long long current_timestamp() {
-    struct timeval te;
-    gettimeofday(&te, NULL);
-    return te.tv_sec * 1000LL + te.tv_usec / 1000;
-}
+
 
 
 char select_and_remove(char arr[], int* size) {
