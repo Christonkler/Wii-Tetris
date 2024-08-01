@@ -82,6 +82,12 @@ void drawSquare(int startX, int startY, int squareSize, u32 color) {
 }
 
 
+void drawBox(int startX, int startY, int squareSize, u32 color) {
+	drawSquare(startX, startY, squareSize, color);
+	drawSquare(startX+1, startY+2, squareSize - 2, BACKGROUND_COLOR);
+}
+
+
 void initializeWalls() {
 	for (int i = -1; i < 20; i++) {
 		drawSquare(leftX-4*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, WALL_COLOR);
@@ -97,6 +103,13 @@ void initializeWalls() {
 void drawTetrimino(Tetrimino* tetrimino) {
 	for (int i = 0; i < 4; i++) {
 		drawSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE, tetrimino->color);
+	}
+}
+
+
+void drawShadow(Tetrimino* tetrimino) {
+	for (int i = 0; i < 4; i++) {
+		drawBox(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE, WALL_COLOR);
 	}
 }
 
@@ -450,7 +463,38 @@ int preventRotationCollision(Tetrimino* tetrimino, int direction) { // We draw i
 
 
 
-int movePieceGravity(Tetrimino* tetrimino) {
+int shouldDrawShadow(Tetrimino* realPiece, Tetrimino* shadow) {
+	if (((shadow->xPosition == leftX) || shadow->xPosition == leftX + TILE_SIZE ) && (shadow->yPosition == bottomY) && movementBlocked(realPiece, 0, 2*TILE_SIZE, 0) == 0 && movementBlocked(realPiece, 0, 4*TILE_SIZE, 0) == 0 && movementBlocked(realPiece, 0, 6*TILE_SIZE, 0) == 0) {
+		int blockedNumber = 0;
+		for (int i = 0; i < 3; i++) {
+			if (movementBlocked(realPiece, 0, 2*i*TILE_SIZE, 0) != 0) { // Don't draw the shadow when the stack is really tall
+				blockedNumber++;
+				break;
+			}
+		}
+		if (blockedNumber == 0) {
+			for (int i = 0; i < 4; i++) {
+				if (realPiece->yPosition > shadow->yPosition) { // Don't draw the shadow above the real piece
+					return 1;
+				}
+			}
+			return 0;
+		}
+	}
+	for (int i = 0; i < 4; i++) {
+		if (shadow->tiles[i].xPosition == realPiece->tiles[i].xPosition && shadow->tiles[i].yPosition == realPiece->tiles[i].yPosition) { // Don't draw the shadow over the real piece
+			return 1;
+		}
+	}
+	return 0;
+}
+
+
+
+int movePieceGravity(Tetrimino* tetrimino, Tetrimino* shadow) {
+	if ((shouldDrawShadow(tetrimino, shadow) == 0)) {
+		eraseTetrimino(shadow);
+	}
 	if ((tetrimino->yPosition > 470-TILE_SIZE) || movementBlocked(tetrimino, 0, 2*TILE_SIZE, 0) != 0) { // Bottom of screen is 480
 		return 1;
 	}
@@ -462,50 +506,111 @@ int movePieceGravity(Tetrimino* tetrimino) {
 	tetrimino->yPosition += 2*TILE_SIZE;
 	tetrimino->bottom += 2*TILE_SIZE;
 	lockTimeStart = current_timestamp();
+	if (shouldDrawShadow(tetrimino, shadow) == 0) {
+		drawShadow(shadow);
+	}
 	return 0;
 }
 
 
-int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, u16 buttonsDown) {
+int lowerShadow(Tetrimino* shadow) {
+	if ((shadow->yPosition > 470-TILE_SIZE) || movementBlocked(shadow, 0, 2*TILE_SIZE, 0) != 0) { // Bottom of screen is 480
+		return 1;
+	}
+	for (int i = 0; i < 4; i++) {
+		moveTile(&shadow->tiles[i], 0, 2*TILE_SIZE);
+	}
+	shadow->yPosition += 2*TILE_SIZE;
+	shadow->bottom += 2*TILE_SIZE;
+	return 0;
+}
+
+
+void hardDrop(Tetrimino* tetrimino, Tetrimino* shadow) {
+	while (1) {
+		if (movePieceGravity(tetrimino, shadow) == 1) {
+			break;
+		}
+	}
+}
+
+
+void dropShadow(Tetrimino* shadow) {
+	while(1) {
+		if (lowerShadow(shadow) == 1) {
+			break;
+		}
+	}
+}
+
+
+void resetShadowPosition(Tetrimino* realPiece, Tetrimino* shadow) {
+	shadow->xPosition = realPiece->xPosition;
+	shadow->yPosition = realPiece->yPosition;
+	for (int i = 0; i < 4; i++) {
+		shadow->tiles[i].xPosition = realPiece->tiles[i].xPosition;
+		shadow->tiles[i].yPosition = realPiece->tiles[i].yPosition;
+	}
+}
+
+
+void moveShadow(Tetrimino* realPiece, Tetrimino* shadow) {
+	if ((shouldDrawShadow(realPiece, shadow) == 0)) {
+		eraseTetrimino(shadow);
+		resetShadowPosition(realPiece, shadow);
+		dropShadow(shadow); // HARD DROP SHADOW
+		drawShadow(shadow);
+		drawTetrimino(realPiece);
+	}
+}
+
+
+
+int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, Tetrimino* shadowTetrimino, u16 buttonsDown) {
 	
 	
 	u16 buttonsHeld = WPAD_ButtonsHeld(0);
 	//u16 buttonsUp = WPAD_ButtonsUp(0);
 	
 	if (buttonsDown & WPAD_BUTTON_B) { // HARD DROP
-		while (1) {
-			if (movePieceGravity(tetrimino) == 1) {
-				break;
-			}
-		}
+		hardDrop(tetrimino, shadowTetrimino);
+		drawTetrimino(tetrimino);
 		return 1;
 	} else if ((buttonsDown & WPAD_BUTTON_A) && pieceHeld == 0) { // HOLD PIECE
 		pieceHeld++;
-		return holdPiece(tetrimino, heldTetrimino);
+		eraseTetrimino(shadowTetrimino);
+		int result = holdPiece(tetrimino, heldTetrimino);
+		resetShadowPosition(tetrimino, shadowTetrimino);
+		moveShadow(tetrimino, shadowTetrimino);
+		return result;
 	}
 	
 	if (((buttonsDown & WPAD_BUTTON_UP) || ((buttonsHeld & WPAD_BUTTON_UP) && (current_timestamp() - lastButtonPress > 120))) && (movementBlocked(tetrimino, -1*TILE_SIZE, 0, 0) == 0)) {  // LEFT
 		eraseTetrimino(tetrimino);
 		shiftTetrimino(tetrimino, -1, 0);
-		drawTetrimino(tetrimino);
+		moveShadow(tetrimino, shadowTetrimino);
 		lastButtonPress = current_timestamp();
 	} else if (((buttonsDown & WPAD_BUTTON_DOWN) || ((buttonsHeld & WPAD_BUTTON_DOWN) && (current_timestamp() - lastButtonPress > 120))) && (movementBlocked(tetrimino, TILE_SIZE, 0, 0) == 0)) { // RIGHT
 		eraseTetrimino(tetrimino);
 		shiftTetrimino(tetrimino, 1, 0);
-		drawTetrimino(tetrimino);
+		moveShadow(tetrimino, shadowTetrimino);
 		lastButtonPress = current_timestamp();
 	}
 	
 	if ((buttonsDown & WPAD_BUTTON_LEFT || ((buttonsHeld & WPAD_BUTTON_LEFT) && (current_timestamp() - lastButtonPress > 120))) && (movementBlocked(tetrimino, 0, 2*TILE_SIZE, 0) == 0)) { // DOWN
-		movePieceGravity(tetrimino);
+		movePieceGravity(tetrimino, shadowTetrimino);
 		drawTetrimino(tetrimino);
 		lastButtonPress = current_timestamp();
 	}
 	
 	if (buttonsDown & WPAD_BUTTON_2) { // ROTATE RIGHT
+		eraseTetrimino(shadowTetrimino);
 		rotateTetrimino(tetrimino, 1, 0);
+		moveShadow(tetrimino, shadowTetrimino);
 	} else if (buttonsDown & WPAD_BUTTON_1) { // ROTATE LEFT
+		eraseTetrimino(shadowTetrimino);
 		rotateTetrimino(tetrimino, -1, 0);
+		moveShadow(tetrimino, shadowTetrimino);
 	}
 	return 0;
 }
@@ -602,7 +707,7 @@ int tetriminoMovesLeftOnUpPressTest() {
 	tetrimino.shape = 'T';
 	initializeTetrimino(&tetrimino);
 	eraseTetrimino(&tetrimino);
-	moveTetriminoButtonPress(&tetrimino, NULL, 0x0800);
+	moveTetriminoButtonPress(&tetrimino, NULL, &tetrimino, 0x0800);
 	eraseTetrimino(&tetrimino);
 	if (tetrimino.xPosition != (leftX-TILE_SIZE)) {
 		printf("Tetrimino did not move left. Expected position %d but was %d\n", leftX-TILE_SIZE, tetrimino.xPosition);
@@ -618,7 +723,7 @@ int tetriminoMovesRightOnDownPressTest() {
 	tetrimino.shape = 'T';
 	initializeTetrimino(&tetrimino);
 	eraseTetrimino(&tetrimino);
-	moveTetriminoButtonPress(&tetrimino, NULL, 0x0400);
+	moveTetriminoButtonPress(&tetrimino, NULL, &tetrimino, 0x0400);
 	eraseTetrimino(&tetrimino);
 	
 	if (tetrimino.xPosition != (leftX+TILE_SIZE)) {
@@ -635,7 +740,7 @@ int tetriminoMovesDownOnLeftPressTest() {
 	tetrimino.shape = 'T';
 	initializeTetrimino(&tetrimino);
 	eraseTetrimino(&tetrimino);
-	moveTetriminoButtonPress(&tetrimino, NULL, 0x0100);
+	moveTetriminoButtonPress(&tetrimino, NULL, &tetrimino, 0x0100);
 	eraseTetrimino(&tetrimino);
 	
 	if (tetrimino.bottom != (bottomY+2*TILE_SIZE)) {
@@ -652,7 +757,7 @@ int gravityTest() {
 	tetrimino.shape = 'T';
 	initializeTetrimino(&tetrimino);
 	eraseTetrimino(&tetrimino);
-	movePieceGravity(&tetrimino);
+	movePieceGravity(&tetrimino, &tetrimino);
 	eraseTetrimino(&tetrimino);
 	
 	if (tetrimino.yPosition != (bottomY+2*TILE_SIZE)) {
@@ -670,7 +775,7 @@ int floorTest() {
 	initializeTetrimino(&tetrimino);
 	eraseTetrimino(&tetrimino);
 	tetrimino.yPosition = 480-TILE_SIZE + 1;
-	movePieceGravity(&tetrimino);
+	movePieceGravity(&tetrimino, &tetrimino);
 	eraseTetrimino(&tetrimino);
 	
 	if (tetrimino.yPosition != (480-TILE_SIZE + 1)) {
@@ -688,7 +793,7 @@ int pieceFloorTest() {
 	initializeTetrimino(&tetrimino);
 	eraseTetrimino(&tetrimino);
 	xfb[((bottomY+2*TILE_SIZE) * rmode->fbWidth)/2 + tetrimino.xPosition] = 0x12F12312;
-	movePieceGravity(&tetrimino);
+	movePieceGravity(&tetrimino, &tetrimino);
 	eraseTetrimino(&tetrimino);
 	
 	if (tetrimino.yPosition != bottomY) {
@@ -795,7 +900,9 @@ int main() {
 	Tetrimino nextTetrimino3;
 	Tetrimino nextTetrimino4;
 	Tetrimino heldTetrimino;
+	Tetrimino shadowTetrimino;
 	heldTetrimino.shape = ' ';
+	shadowTetrimino.shape = ' ';
 	currentTetrimino.shape = select_and_remove(my_characters, &size);
 	nextTetrimino1.shape = select_and_remove(my_characters, &size);
 	nextTetrimino2.shape = select_and_remove(my_characters, &size);
@@ -807,6 +914,8 @@ int main() {
 	initializeTetriminoQueue(&nextTetrimino3, 3);
 	initializeTetriminoQueue(&nextTetrimino4, 4);
 	countTilesInRow(bottomY);
+
+	moveShadow(&currentTetrimino, &shadowTetrimino);
 	
 	u16 buttonsDown;
 	
@@ -833,13 +942,15 @@ int main() {
 			sleep(5);
 			return 0;
 		}
-		int shouldShiftQueue = moveTetriminoButtonPress(&currentTetrimino, &heldTetrimino, buttonsDown);
+		int shouldShiftQueue = moveTetriminoButtonPress(&currentTetrimino, &heldTetrimino, &shadowTetrimino, buttonsDown);
 		if ((shouldShiftQueue != 0) || (current_timestamp() - start > interval)) {
-			if (((shouldShiftQueue != 0)) || ((movePieceGravity(&currentTetrimino) != 0) && (current_timestamp() - lockTimeStart > lockTimeout))) {
+			if (((shouldShiftQueue != 0)) || ((movePieceGravity(&currentTetrimino, &shadowTetrimino) != 0) && (current_timestamp() - lockTimeStart > lockTimeout))) {
 				linesCleared += clearLines(&currentTetrimino);
 				interval = 200 - (10* (linesCleared/10));
 				lockTimeout = interval < 50 ? 150 : interval*3;
 				shiftQueue(&currentTetrimino, &nextTetrimino1, &nextTetrimino2, &nextTetrimino3, &nextTetrimino4, select_and_remove(my_characters, &size));
+				resetShadowPosition(&currentTetrimino, &shadowTetrimino);
+				moveShadow(&currentTetrimino, &shadowTetrimino);
 				pieceHeld = 0;
 				if (movementBlocked(&currentTetrimino, 0, 2*TILE_SIZE, 0) != 0) {
 					printf("Total lines cleared: %d\n", linesCleared);

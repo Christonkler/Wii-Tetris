@@ -21,7 +21,7 @@ void moveTileButtonPress(Tile* tile, u16 buttonsDown);
 
 void initializeTetriminoTiles(Tetrimino* tetrimino);
 
-int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, u16 buttonsDown);
+int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, Tetrimino* shadowTetrimino, u16 buttonsDown);
 
 int preventRotationCollision(Tetrimino* tetrimino, int direction);
 
