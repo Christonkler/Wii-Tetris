@@ -877,6 +877,10 @@ int run_tests() {
 
 int main() {
 	initializeGraphics();
+	printf("Press + to start.");
+	startScreen();
+
+	initializeGraphics();
 	initializeWalls();
 	srand(time(NULL));
 	
@@ -918,9 +922,8 @@ int main() {
 	moveShadow(&currentTetrimino, &shadowTetrimino);
 	
 	u16 buttonsDown;
-	
-	startScreen();
 	int linesCleared = 0;
+	sleep(1);
 	
 	long long start = current_timestamp();
 	while(1) {
@@ -955,7 +958,17 @@ int main() {
 				if (movementBlocked(&currentTetrimino, 0, 2*TILE_SIZE, 0) != 0) {
 					printf("Total lines cleared: %d\n", linesCleared);
 					printf("Level achieved: %d\n", 1 + linesCleared/10); // Integer division rounds down
-					sleep(5);
+					printf("Press 2 to play again, or press B to quit.\n");
+					sleep(1);
+					while (1) {
+						WPAD_ScanPads();
+						buttonsDown = WPAD_ButtonsDown(0);
+						if (buttonsDown & WPAD_BUTTON_2) {
+							return main();
+						} else if (buttonsDown & WPAD_BUTTON_B) {
+							return 0;
+						}
+					}
 					return 0;
 				}
 			}
