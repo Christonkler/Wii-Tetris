@@ -100,6 +100,15 @@ void initializeWalls() {
 }
 
 
+void initializeGrid() {
+	for (int i = -1; i < 20; i++) {
+		for (int j = 0; j < 10; j++) {
+			drawBox(leftX + (-3 + j)*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, GRID_COLOR);
+		}
+	}
+}
+
+
 void drawTetrimino(Tetrimino* tetrimino) {
 	for (int i = 0; i < 4; i++) {
 		drawSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE, tetrimino->color);
@@ -115,7 +124,7 @@ void drawShadow(Tetrimino* tetrimino) {
 
 
 void eraseSquare(int startX, int startY, int squareSize) {
-	drawSquare(startX, startY, squareSize, BACKGROUND_COLOR);
+	drawBox(startX, startY, squareSize, GRID_COLOR);
 }
 
 
@@ -132,7 +141,7 @@ int countTilesInRow(int yPosition) {
 	int index;
 	for (int i = 0; i < 10; i++) {
 		index = (yPosition * rmode->fbWidth)/2 + (startX + i*TILE_SIZE);
-		if (xfb[index] != BACKGROUND_COLOR) {
+		if ((xfb[index] != BACKGROUND_COLOR) && (xfb[index] != GRID_COLOR)) {
 			filledSpaces++;
 		}
 	}
@@ -147,7 +156,11 @@ void shiftLine(int yPosition) {
 	int index;
 	for (int i = 0; i < 10; i++) {
 		index = (yAbove * rmode->fbWidth)/2 + (startX + i*TILE_SIZE);
-		drawSquare((startX + i*TILE_SIZE), yPosition, TILE_SIZE, xfb[index]);
+		if (xfb[index] == GRID_COLOR) {
+			drawBox((startX + i*TILE_SIZE), yPosition, TILE_SIZE, xfb[index]);
+		} else {
+			drawSquare((startX + i*TILE_SIZE), yPosition, TILE_SIZE, xfb[index]);
+		}
 	}
 }
 
@@ -387,7 +400,7 @@ int movementBlocked(Tetrimino* tetrimino, int xPositionChange, int yPositionChan
 	for (int i = 0; i < 4; i++) {
 		newXPosition = tetrimino->tiles[i].xPosition + xPositionChange;
 		newYPosition = tetrimino->tiles[i].yPosition + yPositionChange;
-		if (xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != BACKGROUND_COLOR) {
+		if ((xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != BACKGROUND_COLOR) && (xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != GRID_COLOR)) {
 			if (notRotating == 0) { // TODO: Find a more elegant solution for this. We erase when rotating but not when moving
 				int notBlocked = 0;
 				for (int j = 0; j < 4; j++) {
@@ -429,7 +442,7 @@ void shiftTetrimino(Tetrimino* tetrimino, int xDirection, int yDirection) {
 int preventRotationCollision(Tetrimino* tetrimino, int direction) { // We draw if this returns 0. tetrimino has already been erased.
 	int blocked = 0;
 	for (int i = 0; i < 4; i++) {
-		if (xfb[(tetrimino->tiles[i].yPosition * rmode->fbWidth)/2 + tetrimino->tiles[i].xPosition] != BACKGROUND_COLOR) {
+		if ((xfb[(tetrimino->tiles[i].yPosition * rmode->fbWidth)/2 + tetrimino->tiles[i].xPosition] != BACKGROUND_COLOR) && (xfb[(tetrimino->tiles[i].yPosition * rmode->fbWidth)/2 + tetrimino->tiles[i].xPosition] != GRID_COLOR)) {
 			blocked = 1;
 		}
 	}
@@ -878,10 +891,14 @@ int run_tests() {
 int main() {
 	initializeGraphics();
 	printf("Press + to start.");
+	// drawBox(leftX, bottomY, TILE_SIZE, GRID_COLOR);
+	initializeWalls();
+	initializeGrid();
 	startScreen();
 
 	initializeGraphics();
 	initializeWalls();
+	initializeGrid();
 	srand(time(NULL));
 	
 	if (run_tests() != 0) {
