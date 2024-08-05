@@ -109,6 +109,15 @@ void initializeGrid() {
 }
 
 
+int positionInBounds(int xPosition, int yPosition) {
+	int leftBound = leftX - 3*TILE_SIZE;
+	int rightBound = leftX + 6*TILE_SIZE;
+	int upperBound = bottomY - 1*2*TILE_SIZE;
+	int lowerBound = bottomY + 19*2*TILE_SIZE;
+	return (leftBound <= xPosition) && (xPosition <= rightBound) && (upperBound <= yPosition) && (yPosition <= lowerBound);
+}
+
+
 void drawTetrimino(Tetrimino* tetrimino) {
 	for (int i = 0; i < 4; i++) {
 		drawSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE, tetrimino->color);
@@ -124,7 +133,11 @@ void drawShadow(Tetrimino* tetrimino) {
 
 
 void eraseSquare(int startX, int startY, int squareSize) {
-	drawBox(startX, startY, squareSize, GRID_COLOR);
+	if (positionInBounds(startX, startY)) {
+		drawBox(startX, startY, squareSize, GRID_COLOR);
+	} else {
+		drawSquare(startX, startY, TILE_SIZE, BACKGROUND_COLOR);
+	}
 }
 
 
@@ -156,7 +169,7 @@ void shiftLine(int yPosition) {
 	int index;
 	for (int i = 0; i < 10; i++) {
 		index = (yAbove * rmode->fbWidth)/2 + (startX + i*TILE_SIZE);
-		if (xfb[index] == GRID_COLOR) {
+		if (xfb[index] == GRID_COLOR || xfb[index] == BACKGROUND_COLOR) {
 			drawBox((startX + i*TILE_SIZE), yPosition, TILE_SIZE, xfb[index]);
 		} else {
 			drawSquare((startX + i*TILE_SIZE), yPosition, TILE_SIZE, xfb[index]);
