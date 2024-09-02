@@ -43,7 +43,7 @@ static long long lockTimeStart = 0;
 //
 //
 
-void initializeGraphics() {
+void initializeGraphics() { // This resets the graphics. What this does exactly is a mystery to me, but it's OK because it works and I got it from a sample project
   
 	VIDEO_Init();
 	WPAD_Init();
@@ -63,7 +63,7 @@ void initializeGraphics() {
 
 
 
-long long current_timestamp() {
+long long current_timestamp() { // Gets the current time. This is used when deciding if a piece should fall down and when to move a piece again when a button is held down
     struct timeval te;
     gettimeofday(&te, NULL);
     return te.tv_sec * 1000LL + te.tv_usec / 1000;
@@ -71,7 +71,7 @@ long long current_timestamp() {
 
 
 
-void drawSquare(int startX, int startY, int squareSize, u32 color) {
+void drawSquare(int startX, int startY, int squareSize, u32 color) { // This draws a solid box at a given position. This is used for drawing tetriminos, the walls, and erasing outside the playing field
 	for (int y = startY; y < startY + 2*squareSize; y++) {
 		for (int x = startX; x < startX + squareSize; x++) {
 			// Calculate the framebuffer index for this pixel
@@ -82,13 +82,13 @@ void drawSquare(int startX, int startY, int squareSize, u32 color) {
 }
 
 
-void drawBox(int startX, int startY, int squareSize, u32 color) {
-	drawSquare(startX, startY, squareSize, color);
+void drawBox(int startX, int startY, int squareSize, u32 color) { // This is used for drawing the grid in the play area and the piece shadow
+	drawSquare(startX, startY, squareSize, color); // Draw the box color, then draw the black inside of that square so that it looks like a grid
 	drawSquare(startX+1, startY+2, squareSize - 2, BACKGROUND_COLOR);
 }
 
 
-void initializeWalls() {
+void initializeWalls() { // Draw the walls to bound the playing field
 	for (int i = -1; i < 20; i++) {
 		drawSquare(leftX-4*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, WALL_COLOR);
 		drawSquare(leftX+7*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, WALL_COLOR);
@@ -100,7 +100,7 @@ void initializeWalls() {
 }
 
 
-void initializeGrid() {
+void initializeGrid() { // Draw the grid in the playing field
 	for (int i = -1; i < 20; i++) {
 		for (int j = 0; j < 10; j++) {
 			drawBox(leftX + (-3 + j)*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, GRID_COLOR);
@@ -109,7 +109,7 @@ void initializeGrid() {
 }
 
 
-int positionInBounds(int xPosition, int yPosition) {
+int positionInBounds(int xPosition, int yPosition) { // Checks if a position is inbounds. This is mainly used for erasing so we know if we should draw a grid or black box
 	int leftBound = leftX - 3*TILE_SIZE;
 	int rightBound = leftX + 6*TILE_SIZE;
 	int upperBound = bottomY - 1*2*TILE_SIZE;
@@ -118,22 +118,25 @@ int positionInBounds(int xPosition, int yPosition) {
 }
 
 
-void drawTetrimino(Tetrimino* tetrimino) {
+void drawTetrimino(Tetrimino* tetrimino) { // Helper function to draw all 4 pieces of a tetrimino
 	for (int i = 0; i < 4; i++) {
 		drawSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE, tetrimino->color);
 	}
 }
 
 
-void drawShadow(Tetrimino* tetrimino) {
+void drawShadow(Tetrimino* tetrimino, Tetrimino* shadow) { // Helper function to draw the shadow of a piece
 	for (int i = 0; i < 4; i++) {
-		drawBox(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE, WALL_COLOR);
+		// This if statement is intended to avoid drawing over the real piece. Somewhere the positions must be getting out of sync?
+		// if (tetrimino->tiles[i].yPosition != shadow->tiles[i].yPosition) {
+			drawBox(shadow->tiles[i].xPosition, shadow->tiles[i].yPosition, TILE_SIZE, WALL_COLOR);
+		// }
 	}
 }
 
 
-void eraseSquare(int startX, int startY, int squareSize) {
-	if (positionInBounds(startX, startY)) {
+void eraseSquare(int startX, int startY, int squareSize) { // Erases a piece or shadow
+	if (positionInBounds(startX, startY)) { // Grids go inbounds, black boxes go out of bounds
 		drawBox(startX, startY, squareSize, GRID_COLOR);
 	} else {
 		drawSquare(startX, startY, TILE_SIZE, BACKGROUND_COLOR);
@@ -141,14 +144,14 @@ void eraseSquare(int startX, int startY, int squareSize) {
 }
 
 
-void eraseTetrimino(Tetrimino* tetrimino) {
+void eraseTetrimino(Tetrimino* tetrimino) { // Helper function to erase an entire tetrimino - This includes shadows and the pieces in the queue
 	for (int i = 0; i < 4; i++) {
 		eraseSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE);
 	}
 }
 
 
-int countTilesInRow(int yPosition) {
+int countTilesInRow(int yPosition) { // This is used to check if a line should be cleared. 10 => clear it
 	int filledSpaces = 0;
 	int startX = leftX - 3*TILE_SIZE;
 	int index;
@@ -163,13 +166,13 @@ int countTilesInRow(int yPosition) {
 
 
 
-void shiftLine(int yPosition) {
+void shiftLine(int yPosition) { // This is used in clearing lines
 	int yAbove = yPosition - 2*TILE_SIZE;
 	int startX = leftX - 3*TILE_SIZE;
 	int index;
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 10; i++) { // Copy the row above to the current row
 		index = (yAbove * rmode->fbWidth)/2 + (startX + i*TILE_SIZE);
-		if (xfb[index] == GRID_COLOR || xfb[index] == BACKGROUND_COLOR) {
+		if (xfb[index] == GRID_COLOR || xfb[index] == BACKGROUND_COLOR) { // GRID_COLOR or BACKGROUND_COLOR => Grid, so we draw another grid in current row
 			drawBox((startX + i*TILE_SIZE), yPosition, TILE_SIZE, xfb[index]);
 		} else {
 			drawSquare((startX + i*TILE_SIZE), yPosition, TILE_SIZE, xfb[index]);
@@ -179,9 +182,9 @@ void shiftLine(int yPosition) {
 
 
 
-void shiftLines(int yPosition) {
+void shiftLines(int yPosition) { // Used for shifting all the lines
 	int currentYPosition = yPosition;
-	while (countTilesInRow(currentYPosition) != 0) {
+	while (countTilesInRow(currentYPosition) != 0) { // If there aren't any pieces in the row, stop shifting. No need to proceed and redraw the empty grid
 		shiftLine(currentYPosition);
 		currentYPosition -= 2*TILE_SIZE;
 	}
@@ -189,14 +192,14 @@ void shiftLines(int yPosition) {
 
 
 
-int clearLines(Tetrimino* tetrimino) {
+int clearLines(Tetrimino* tetrimino) { // Can clear lines when a piece is placed
 	int currentYPosition = tetrimino->bottom;
 	int linesCleared = 0;
-	int tilesInRow = countTilesInRow(currentYPosition);
-	while (tilesInRow != 0 && linesCleared < 4) {
-		if (tilesInRow == 10) {
+	int tilesInRow = countTilesInRow(currentYPosition); // tilesInRow = 0 => Nothing is in the row, so we don't have to check anything
+	while (tilesInRow != 0 && linesCleared < 4) { // You can't clear any more than 4 lines with one piece, so we don't need to check for line clears after clearing 4
+		if (tilesInRow == 10) { // if a line was cleared
 			linesCleared++;
-			shiftLines(currentYPosition);
+			shiftLines(currentYPosition); // We pulled every line down one, so we don't have to shift the currentYPosition. Shifting "moved" our position for us
 		} else {
 			currentYPosition -= 2*TILE_SIZE;
 		}
@@ -219,8 +222,7 @@ int clearLines(Tetrimino* tetrimino) {
 
 
 
-
-void rotateTetrimino(Tetrimino* tetrimino, int direction, int shouldErase) { // No restrictions
+void rotateTetrimino(Tetrimino* tetrimino, int direction, int shouldErase) {
 	if (tetrimino->shape == 'O') {
 		return;
 	}
@@ -229,19 +231,21 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction, int shouldErase) { // 
 		eraseTetrimino(tetrimino);
 	}
 
-	if (direction == -1) {
+	if (direction == -1) { // The rotation array keeps track of rotation shifts for clockwise movement, so we have to shift back one rotation state before rotating
 		tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
 	}
 
 	for (int i = 0; i < 8; i+=2) {
-				tetrimino->tiles[i/2].xPosition += tetrimino->rotationArray[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction;
-				tetrimino->tiles[i/2].yPosition += tetrimino->rotationArray[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
+		tetrimino->tiles[i/2].xPosition += tetrimino->rotationArray[(8 * tetrimino->rotationState + i)]*TILE_SIZE*direction; // Subtract for counterclockwise to "undo" the rotation
+		tetrimino->tiles[i/2].yPosition += tetrimino->rotationArray[(8 * tetrimino->rotationState + (i+1))]*TILE_SIZE*direction;
 	}
 
-	if (direction == 1) {
+	if (direction == 1) { // Clockwise rotation means we add to the state after making the rotation
 		tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
 	}
 
+	// Sometimes, a rotation would make pieces collide with other pieces or a wall. This is an attempt to make some "smart" rotation logic, where a rotation against the wall will
+	// push the piece away from that wall. This also allows for T-Spin doubles and T-Spin triples Soon TM.
 	if (preventRotationCollision(tetrimino, direction) != 0) {
 		rotateTetrimino(tetrimino, -1*direction, 1); // Undo rotation
 	} else {
@@ -250,7 +254,7 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction, int shouldErase) { // 
 }
 
 
-
+// Draws a tetrimino in its intial rotation state somewhere. The position of the 0th tetrimino has always been the bottom left of the tetrimino, so those bounds are passed into this function
 void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bottomYBound) {
 	tetrimino->rotationState=0;
 	switch(tetrimino->shape) {
@@ -365,28 +369,29 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			memcpy(tetrimino->rotationArray, Z_ROTATIONS, sizeof(Z_ROTATIONS));
 			break;
 		
-		default:
+		default: // This better not happen. If it does, well I guess I suck.
 			printf("RANDOMIZER IS BUSTED! %c\n NOT IN SET\n", (char)tetrimino->shape);
 			break;
 	}
 }
 
 
-void initializeTetrimino(Tetrimino* tetrimino) {
+void initializeTetrimino(Tetrimino* tetrimino) { // Used for the currentTetrimino that's in play
 	initializeTetriminoSetPosition(tetrimino, leftX, bottomY);
 }
 
 
-void initializeTetriminoQueue(Tetrimino* tetrimino, int queuePosition) {
+void initializeTetriminoQueue(Tetrimino* tetrimino, int queuePosition) { // Given a position in the queue, draw the tetrimino where it should be on the side
 	initializeTetriminoSetPosition(tetrimino, leftX + 10*TILE_SIZE, bottomY + (queuePosition-1)*8*TILE_SIZE);
 }
 
 
-void initializeTetriminoHeldPiece(Tetrimino* tetrimino) {
+void initializeTetriminoHeldPiece(Tetrimino* tetrimino) { // Draw the held piece in the top left
 	initializeTetriminoSetPosition(tetrimino, leftX - 9*TILE_SIZE, bottomY);
 }
 
 
+// Swaps the current piece with the held one in the top left corner
 int holdPiece(Tetrimino* currentTetrimino, Tetrimino* heldTetrimino) {
 	if (heldTetrimino->shape != ' ') { // != NULL
 		char newHoldShape = currentTetrimino->shape;
@@ -401,12 +406,12 @@ int holdPiece(Tetrimino* currentTetrimino, Tetrimino* heldTetrimino) {
 		eraseTetrimino(currentTetrimino);
 		heldTetrimino->shape = currentTetrimino->shape;
 		initializeTetriminoHeldPiece(heldTetrimino);
-		return 2;
+		return 2; // Why do I return 2 here? Well it's quite obvious if you actually read the code.
 	}
 }
 
 
-
+// Check if a piece can move to a new position. Made a mistake when writing piece rotation, so now this is a little yucky
 int movementBlocked(Tetrimino* tetrimino, int xPositionChange, int yPositionChange, int notRotating) {
 	int newXPosition;
 	int newYPosition;
@@ -433,14 +438,14 @@ int movementBlocked(Tetrimino* tetrimino, int xPositionChange, int yPositionChan
 }
 
 
-
+// Move the position of a tetrimino somewhere regardless of what's in that new position. The tile would still have to be drawn for this to really do anything
 void moveTile(Tile* tile, int xPositionChange, int yPositionChange) {
 	tile->xPosition += xPositionChange;
 	tile->yPosition += yPositionChange;
 }
 
 
-
+// Helper function to move the whole tetrimino one space over. This could be up, down, left, or right
 void shiftTetrimino(Tetrimino* tetrimino, int xDirection, int yDirection) {
 	for (int i = 0; i < 4; i++) {
 		moveTile(&tetrimino->tiles[i], xDirection*TILE_SIZE, yDirection*2*TILE_SIZE);
@@ -454,7 +459,7 @@ void shiftTetrimino(Tetrimino* tetrimino, int xDirection, int yDirection) {
 
 int preventRotationCollision(Tetrimino* tetrimino, int direction) { // We draw if this returns 0. tetrimino has already been erased.
 	int blocked = 0;
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) { // The background and the grid colors mean the space is empty. I probably have a function somewhere that would do this for me...
 		if ((xfb[(tetrimino->tiles[i].yPosition * rmode->fbWidth)/2 + tetrimino->tiles[i].xPosition] != BACKGROUND_COLOR) && (xfb[(tetrimino->tiles[i].yPosition * rmode->fbWidth)/2 + tetrimino->tiles[i].xPosition] != GRID_COLOR)) {
 			blocked = 1;
 		}
@@ -464,33 +469,34 @@ int preventRotationCollision(Tetrimino* tetrimino, int direction) { // We draw i
 		return 0;
 	}
 	
-	if (movementBlocked(tetrimino, -1*direction*TILE_SIZE, 0, 1) == 0) { // Shifting it once in the opposite direction is fine
+	if (movementBlocked(tetrimino, -1*direction*TILE_SIZE, 0, 1) == 0) { // Shift once away from the wall
 		shiftTetrimino(tetrimino, -1*direction, 0);
 		return 0;
-	} else if (movementBlocked(tetrimino, direction*TILE_SIZE, 0, 1) == 0) {
+	} else if (movementBlocked(tetrimino, direction*TILE_SIZE, 0, 1) == 0) { // Shift once towards the wall. Not sure if this would actually work
 		shiftTetrimino(tetrimino, 1*direction, 0);
 		return 0;
-	} else if (movementBlocked(tetrimino, -2*direction*TILE_SIZE, 0, 1) == 0) {
+	} else if (movementBlocked(tetrimino, -2*direction*TILE_SIZE, 0, 1) == 0) { // Same thing but 2 spaces instead
 		shiftTetrimino(tetrimino, -2*direction, 0);
 		return 0;
 	} else if (movementBlocked(tetrimino, 2*direction*TILE_SIZE, 0, 1) == 0) {
 		shiftTetrimino(tetrimino, 2*direction, 0);
 		return 0;
-	} else if (movementBlocked(tetrimino, 1*direction*TILE_SIZE, 1*2*TILE_SIZE, 1) == 0) {
+	} else if (movementBlocked(tetrimino, 1*direction*TILE_SIZE, 1*2*TILE_SIZE, 1) == 0) { // Essentially T Spin Doubles
 		shiftTetrimino(tetrimino, 1*direction, 1);
 		return 0;
 	} else if (movementBlocked(tetrimino, -1*direction*TILE_SIZE, 1*2*TILE_SIZE, 1) == 0) {
 		shiftTetrimino(tetrimino, -1*direction, 1);
 		return 0;
-	} else {
+	// TODO: Implement T Spin Triples
+	} else { // We couldn't find a way to resolve this rotation, so you can't rotate
 		return 1;
 	}
 }
 
 
-
+// Intended to determine if we should draw the shadow. This kind of works, but something breaks when rotating near the bottom
 int shouldDrawShadow(Tetrimino* realPiece, Tetrimino* shadow) {
-	if (((shadow->xPosition == leftX) || shadow->xPosition == leftX + TILE_SIZE ) && (shadow->yPosition == bottomY) && movementBlocked(realPiece, 0, 2*TILE_SIZE, 0) == 0 && movementBlocked(realPiece, 0, 4*TILE_SIZE, 0) == 0 && movementBlocked(realPiece, 0, 6*TILE_SIZE, 0) == 0) {
+	if ((((shadow->xPosition == leftX) || shadow->xPosition == leftX + TILE_SIZE ) && (shadow->yPosition == bottomY)) && movementBlocked(realPiece, 0, 2*TILE_SIZE, 0) == 0 && movementBlocked(realPiece, 0, 4*TILE_SIZE, 0) == 0 && movementBlocked(realPiece, 0, 6*TILE_SIZE, 0) == 0) {
 		int blockedNumber = 0;
 		for (int i = 0; i < 3; i++) {
 			if (movementBlocked(realPiece, 0, 2*i*TILE_SIZE, 0) != 0) { // Don't draw the shadow when the stack is really tall
@@ -508,7 +514,7 @@ int shouldDrawShadow(Tetrimino* realPiece, Tetrimino* shadow) {
 		}
 	}
 	for (int i = 0; i < 4; i++) {
-		if (shadow->tiles[i].xPosition == realPiece->tiles[i].xPosition && shadow->tiles[i].yPosition == realPiece->tiles[i].yPosition) { // Don't draw the shadow over the real piece
+		if ((shadow->tiles[i].xPosition == realPiece->tiles[i].xPosition) && (shadow->tiles[i].yPosition == realPiece->tiles[i].yPosition)) { // Don't draw the shadow over the real piece
 			return 1;
 		}
 	}
@@ -516,7 +522,7 @@ int shouldDrawShadow(Tetrimino* realPiece, Tetrimino* shadow) {
 }
 
 
-
+// Move a piece down once. Possibly will update the collision detection and shadow color so we don't have to keep redrawing the shadow piece
 int movePieceGravity(Tetrimino* tetrimino, Tetrimino* shadow) {
 	if ((shouldDrawShadow(tetrimino, shadow) == 0)) {
 		eraseTetrimino(shadow);
@@ -531,14 +537,15 @@ int movePieceGravity(Tetrimino* tetrimino, Tetrimino* shadow) {
 	drawTetrimino(tetrimino);
 	tetrimino->yPosition += 2*TILE_SIZE;
 	tetrimino->bottom += 2*TILE_SIZE;
-	lockTimeStart = current_timestamp();
+	lockTimeStart = current_timestamp(); // If the piece was able to drop down one space, extend the lockout timer
 	if (shouldDrawShadow(tetrimino, shadow) == 0) {
-		drawShadow(shadow);
+		drawShadow(tetrimino, shadow);
 	}
 	return 0;
 }
 
 
+// Move the shadow down once. 
 int lowerShadow(Tetrimino* shadow) {
 	if ((shadow->yPosition > 470-TILE_SIZE) || movementBlocked(shadow, 0, 2*TILE_SIZE, 0) != 0) { // Bottom of screen is 480
 		return 1;
@@ -552,6 +559,7 @@ int lowerShadow(Tetrimino* shadow) {
 }
 
 
+// Move the tetrimino to the top of the stack
 void hardDrop(Tetrimino* tetrimino, Tetrimino* shadow) {
 	while (1) {
 		if (movePieceGravity(tetrimino, shadow) == 1) {
@@ -561,6 +569,7 @@ void hardDrop(Tetrimino* tetrimino, Tetrimino* shadow) {
 }
 
 
+// Move the shadow to the top of the stack
 void dropShadow(Tetrimino* shadow) {
 	while(1) {
 		if (lowerShadow(shadow) == 1) {
@@ -570,6 +579,7 @@ void dropShadow(Tetrimino* shadow) {
 }
 
 
+// Move the shadow to the position of the real piece
 void resetShadowPosition(Tetrimino* realPiece, Tetrimino* shadow) {
 	shadow->xPosition = realPiece->xPosition;
 	shadow->yPosition = realPiece->yPosition;
@@ -577,25 +587,25 @@ void resetShadowPosition(Tetrimino* realPiece, Tetrimino* shadow) {
 		shadow->tiles[i].xPosition = realPiece->tiles[i].xPosition;
 		shadow->tiles[i].yPosition = realPiece->tiles[i].yPosition;
 	}
+	shadow->bottom = realPiece->bottom;
 }
 
 
+// Move the shadow to the top of the stack starting at the new position of the tetrimino
 void moveShadow(Tetrimino* realPiece, Tetrimino* shadow) {
 	if ((shouldDrawShadow(realPiece, shadow) == 0)) {
-		eraseTetrimino(shadow);
+		eraseTetrimino(shadow); // Erase it while we know where the shadow is
 		resetShadowPosition(realPiece, shadow);
 		dropShadow(shadow); // HARD DROP SHADOW
-		drawShadow(shadow);
-		drawTetrimino(realPiece);
+		drawShadow(realPiece, shadow);
+		drawTetrimino(realPiece); // This is for when we hold pieces so there isn't flashing
 	}
 }
 
 
 
 int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, Tetrimino* shadowTetrimino, u16 buttonsDown) {
-	
-	
-	u16 buttonsHeld = WPAD_ButtonsHeld(0);
+	u16 buttonsHeld = WPAD_ButtonsHeld(0); // I had issues when checking for buttonsDown here
 	//u16 buttonsUp = WPAD_ButtonsUp(0);
 	
 	if (buttonsDown & WPAD_BUTTON_B) { // HARD DROP
@@ -606,7 +616,7 @@ int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, Tet
 		pieceHeld++;
 		eraseTetrimino(shadowTetrimino);
 		int result = holdPiece(tetrimino, heldTetrimino);
-		resetShadowPosition(tetrimino, shadowTetrimino);
+		resetShadowPosition(tetrimino, shadowTetrimino); // This erases the original piece we held
 		moveShadow(tetrimino, shadowTetrimino);
 		return result;
 	}
@@ -630,7 +640,7 @@ int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, Tet
 	}
 	
 	if (buttonsDown & WPAD_BUTTON_2) { // ROTATE RIGHT
-		eraseTetrimino(shadowTetrimino);
+		eraseTetrimino(shadowTetrimino); // Erasing here is likely not necessary, but at this point I'm too afraid to try.
 		rotateTetrimino(tetrimino, 1, 0);
 		moveShadow(tetrimino, shadowTetrimino);
 	} else if (buttonsDown & WPAD_BUTTON_1) { // ROTATE LEFT
@@ -658,7 +668,7 @@ int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, Tet
 
 
 
-
+// Get the next piece using a 7-bag randomizer
 char select_and_remove(char arr[], int* size) {
     if (*size == 0) {
         // Reset array
@@ -703,6 +713,7 @@ void shiftQueue(Tetrimino* currentTetrimino, Tetrimino* nextTetrimino1, Tetrimin
 }
 
 
+// Don't start the game until the player presses +
 void startScreen() {
 	u16 buttonsDown;
 	while(1) {
@@ -721,7 +732,7 @@ void startScreen() {
  //
  //
  //    TESTS
- //
+ //    TODO: Add more and better tests. These are kind of worthless at this point
  //
  //
  //
@@ -883,6 +894,7 @@ int bagOf7RandomizerTest() {
 }
 
 
+// Run all tests. If a test fails, it returns 1 and prints a message so it's clear what broke. This runs before almost anything else.
 int run_tests() {
 	int failedTests = 0;
 	failedTests += tetriminoMovesLeftOnUpPressTest();
@@ -909,7 +921,7 @@ int main() {
 	initializeGrid();
 	startScreen();
 
-	initializeGraphics();
+	initializeGraphics(); // Because I don't know if there's a way to reset the terminal after printing, I just reset the whole thing. It works
 	initializeWalls();
 	initializeGrid();
 	srand(time(NULL));
@@ -920,36 +932,38 @@ int main() {
 		return 1;
 	}
 	
-	rand();
+	rand(); // Honestly not sure what this is for
 	
-    double interval = 200;
+    double interval = 100;
 	double lockTimeout = interval*3;
 	char my_characters[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 	int size = 7;
 	
 	// Initialize the queue
-	Tetrimino currentTetrimino;
-	Tetrimino nextTetrimino1;
+	Tetrimino currentTetrimino; // The one that is in play
+	Tetrimino nextTetrimino1; // These 4 are the next ones in the queue
 	Tetrimino nextTetrimino2;
 	Tetrimino nextTetrimino3;
 	Tetrimino nextTetrimino4;
 	Tetrimino heldTetrimino;
-	Tetrimino shadowTetrimino;
-	heldTetrimino.shape = ' ';
+	Tetrimino shadowTetrimino; // This represents the position where the piece will be if a hard drop were done at any point
+	heldTetrimino.shape = ' '; // Give a space character to the shape since the shape is ever changing and I hate NPEs
 	shadowTetrimino.shape = ' ';
-	currentTetrimino.shape = select_and_remove(my_characters, &size);
+	currentTetrimino.shape = select_and_remove(my_characters, &size); // Initialize shapes for the pieces in the queue - this could probably be its own function
 	nextTetrimino1.shape = select_and_remove(my_characters, &size);
 	nextTetrimino2.shape = select_and_remove(my_characters, &size);
 	nextTetrimino3.shape = select_and_remove(my_characters, &size);
 	nextTetrimino4.shape = select_and_remove(my_characters, &size);
-	initializeTetrimino(&currentTetrimino);
+	initializeTetrimino(&currentTetrimino); // Put pieces into their initial position
 	initializeTetriminoQueue(&nextTetrimino1, 1);
 	initializeTetriminoQueue(&nextTetrimino2, 2);
 	initializeTetriminoQueue(&nextTetrimino3, 3);
 	initializeTetriminoQueue(&nextTetrimino4, 4);
-	countTilesInRow(bottomY);
+	// countTilesInRow(bottomY); // Probably not needed?
 
-	moveShadow(&currentTetrimino, &shadowTetrimino);
+	moveShadow(&currentTetrimino, &shadowTetrimino); // This is intended to drop the shadow to the bottom right away before anything else, but it doesn't work
+	// dropShadow(&shadowTetrimino);
+	// drawShadow(&currentTetrimino, &shadowTetrimino);
 	
 	u16 buttonsDown;
 	int linesCleared = 0;
@@ -959,7 +973,7 @@ int main() {
 	while(1) {
 		WPAD_ScanPads();
 		buttonsDown = WPAD_ButtonsDown(0);
-		if (buttonsDown & WPAD_BUTTON_PLUS) {
+		if (buttonsDown & WPAD_BUTTON_PLUS) { // Check for pause
 			while (1) {
 				WPAD_ScanPads();
 				buttonsDown = WPAD_ButtonsDown(0);
@@ -969,23 +983,26 @@ int main() {
 			}
 			WPAD_ScanPads();
 			buttonsDown = WPAD_ButtonsDown(0);
-		} else if (buttonsDown & WPAD_BUTTON_HOME) {
+		} else if (buttonsDown & WPAD_BUTTON_HOME) { // Check for quit
 			printf("Total lines cleared: %d\n", linesCleared);
 			printf("Level achieved: %d\n", 1 + linesCleared/10);
-			sleep(5);
+			sleep(5); // Give a chance to see results before quitting
 			return 0;
 		}
-		int shouldShiftQueue = moveTetriminoButtonPress(&currentTetrimino, &heldTetrimino, &shadowTetrimino, buttonsDown);
-		if ((shouldShiftQueue != 0) || (current_timestamp() - start > interval)) {
+
+		int shouldShiftQueue = moveTetriminoButtonPress(&currentTetrimino, &heldTetrimino, &shadowTetrimino, buttonsDown); // Did a hard drop occur?
+		if ((shouldShiftQueue != 0) || (current_timestamp() - start > interval)) { // if (hard drop || time to lower piece once)
+			// Yes, I know the nested if looks a little weird. If it's a hard drop, it's time to get a new piece. movePieceGravity lowers the piece, so it's in a different
+			// state than before, then the lockTimeout tells us if that shift was to the bottom and it's time to lock the piece so we can get a new piece.
 			if (((shouldShiftQueue != 0)) || ((movePieceGravity(&currentTetrimino, &shadowTetrimino) != 0) && (current_timestamp() - lockTimeStart > lockTimeout))) {
-				linesCleared += clearLines(&currentTetrimino);
-				interval = 200 - (10* (linesCleared/10));
-				lockTimeout = interval < 50 ? 150 : interval*3;
+				linesCleared += clearLines(&currentTetrimino); // A piece was placed, so we need to check for cleared lines
+				interval = 200 - (10* (linesCleared/10)); // Every 10 lines the speed increases
+				lockTimeout = interval < 50 ? 150 : interval*3; // The lock timeout is also kind of dependent on the number of lines cleared
 				shiftQueue(&currentTetrimino, &nextTetrimino1, &nextTetrimino2, &nextTetrimino3, &nextTetrimino4, select_and_remove(my_characters, &size));
 				resetShadowPosition(&currentTetrimino, &shadowTetrimino);
 				moveShadow(&currentTetrimino, &shadowTetrimino);
-				pieceHeld = 0;
-				if (movementBlocked(&currentTetrimino, 0, 2*TILE_SIZE, 0) != 0) {
+				pieceHeld = 0; // Since a piece was placed, we can now hold another one if we want
+				if (movementBlocked(&currentTetrimino, 0, 2*TILE_SIZE, 0) != 0) { // Check for gameover.
 					printf("Total lines cleared: %d\n", linesCleared);
 					printf("Level achieved: %d\n", 1 + linesCleared/10); // Integer division rounds down
 					printf("Press 2 to play again, or press B to quit.\n");
@@ -1005,6 +1022,7 @@ int main() {
 			start = current_timestamp();
 		}
 	}
+	// Probably don't need these last 4 lines, but they aren't hurting anybody!
 	printf("Total lines cleared: %d\n", linesCleared);
 	printf("Level achieved: %d\n", 1 + linesCleared/10);
 	sleep(5);
