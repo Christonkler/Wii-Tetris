@@ -71,6 +71,17 @@ long long current_timestamp() { // Gets the current time. This is used when deci
 
 
 
+int isIgnoredColor(u32 color) {
+	for (int i = 0; i < 9; i++) {
+		if (color == IGNORED_COLORS[i]) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+
+
 void drawSquare(int startX, int startY, int squareSize, u32 color) { // This draws a solid box at a given position. This is used for drawing tetriminos, the walls, and erasing outside the playing field
 	for (int y = startY; y < startY + 2*squareSize; y++) {
 		for (int x = startX; x < startX + squareSize; x++) {
@@ -139,7 +150,7 @@ void drawShadow(Tetrimino* tetrimino, Tetrimino* shadow) { // Helper function to
 	for (int i = 0; i < 4; i++) {
 		// Do not draw the shadow over the real piece
 		if (shadowIntersectsPiece(tetrimino, &shadow->tiles[i]) == 0) {
-			drawBox(shadow->tiles[i].xPosition, shadow->tiles[i].yPosition, TILE_SIZE, SHADOW_COLOR);
+			drawBox(shadow->tiles[i].xPosition, shadow->tiles[i].yPosition, TILE_SIZE, tetrimino->shadowColor);
 		}
 	}
 }
@@ -279,6 +290,7 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 	switch(tetrimino->shape) {
 		case 'I':
 			tetrimino -> color = I_COLOR;
+			tetrimino -> shadowColor = I_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, I_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
 			tetrimino->tiles[1] = (Tile){leftXBound+TILE_SIZE, bottomYBound, I_COLOR};
@@ -295,6 +307,7 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 		
 		case 'L':
 			tetrimino -> color = L_COLOR;
+			tetrimino -> shadowColor = L_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, L_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
 			tetrimino->tiles[1] = (Tile){leftXBound+TILE_SIZE, bottomYBound, L_COLOR};
@@ -311,6 +324,7 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 		
 		case 'O':
 			tetrimino -> color = O_COLOR;
+			tetrimino -> shadowColor = O_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound+TILE_SIZE, bottomYBound, O_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
 			tetrimino->tiles[1] = (Tile){leftXBound+TILE_SIZE, bottomYBound-TILE_SIZE*2, O_COLOR};
@@ -326,6 +340,7 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 		
 		case 'T':
 			tetrimino -> color = T_COLOR;
+			tetrimino -> shadowColor = T_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, T_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
 			tetrimino->tiles[1] = (Tile){leftXBound+TILE_SIZE, bottomYBound, T_COLOR};
@@ -342,6 +357,7 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 		
 		case 'S':
 			tetrimino -> color = S_COLOR;
+			tetrimino -> shadowColor = S_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, S_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
 			tetrimino->tiles[1] = (Tile){leftXBound+TILE_SIZE, bottomYBound, S_COLOR};
@@ -358,6 +374,7 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 		
 		case 'J':
 			tetrimino -> color = J_COLOR;
+			tetrimino -> shadowColor = J_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, J_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
 			tetrimino->tiles[1] = (Tile){leftXBound, bottomYBound-2*TILE_SIZE, J_COLOR};
@@ -374,6 +391,7 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 		
 		case 'Z':
 			tetrimino -> color = Z_COLOR;
+			tetrimino -> shadowColor = Z_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound-2*TILE_SIZE, Z_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
 			tetrimino->tiles[1] = (Tile){leftXBound+TILE_SIZE, bottomYBound, Z_COLOR};
@@ -438,7 +456,8 @@ int movementBlocked(Tetrimino* tetrimino, int xPositionChange, int yPositionChan
 	for (int i = 0; i < 4; i++) {
 		newXPosition = tetrimino->tiles[i].xPosition + xPositionChange;
 		newYPosition = tetrimino->tiles[i].yPosition + yPositionChange;
-		if ((xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != BACKGROUND_COLOR) && (xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != GRID_COLOR) && (xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != SHADOW_COLOR)) {
+		if (isIgnoredColor(xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition])) {
+		// if ((xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != BACKGROUND_COLOR) && (xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != GRID_COLOR) && (xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != SHADOW_COLOR)) {
 			if (notRotating == 0) { // TODO: Find a more elegant solution for this. We erase when rotating but not when moving
 				int notBlocked = 0;
 				for (int j = 0; j < 4; j++) {
@@ -915,7 +934,7 @@ int main() {
 	
 	rand(); // Honestly not sure what this is for
 	
-    double interval = 100;
+    double interval = 200;
 	double lockTimeout = interval*3;
 	char my_characters[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 	int size = 7;
