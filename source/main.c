@@ -81,6 +81,46 @@ int isIgnoredColor(u32 color) {
 }
 
 
+// This is extremely custom code purely for handling T Spin Triples. Thog don't care.
+int tSpinTripleIsPossible(Tetrimino* tetrimino, int direction) {
+	// Verify it's a T piece and is in the correct rotation state
+	if (tetrimino->shape != 'T' || tetrimino->rotationState != 0) {
+		return 1;
+	}
+
+	int tileCoveringHoleX;
+	int tileCoveringHoleY;
+
+	// Rotating clockwise => Overhang on left. Rotating counter clockwise => Overhang on right
+	if (direction == 1) {
+		tileCoveringHoleX = tetrimino->tiles[0].xPosition;
+		tileCoveringHoleY = tetrimino->tiles[0].yPosition;
+	} else {
+		tileCoveringHoleX = tetrimino->tiles[3].xPosition;
+		tileCoveringHoleY = tetrimino->tiles[3].yPosition;
+	}
+
+	// Verify a ceiling is above the hole
+	if (isIgnoredColor(xfb[((tileCoveringHoleY - 2*TILE_SIZE) * rmode->fbWidth)/2 + tileCoveringHoleX]) == 0) {
+		return 1;
+	}
+
+	// Verify the 3 spaces below the ceiling and the piece are empty
+	for (int i = 1; i < 4; i++) {
+		if (isIgnoredColor(xfb[((tileCoveringHoleY + 2*i*TILE_SIZE) * rmode->fbWidth)/2 + tileCoveringHoleX]) != 0) {
+			return 1;
+		}
+	}
+
+	// Check the part of the T piece that's sticking out
+	if (isIgnoredColor(xfb[((tileCoveringHoleY + 2*2*TILE_SIZE) * rmode->fbWidth)/2 + tileCoveringHoleX + direction*TILE_SIZE]) != 0) {
+		return 1;
+	}
+
+	return 0;
+}
+
+
 
 void drawSquare(int startX, int startY, int squareSize, u32 color) { // This draws a solid box at a given position. This is used for drawing tetriminos, the walls, and erasing outside the playing field
 	for (int y = startY; y < startY + 2*squareSize; y++) {
@@ -261,6 +301,8 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction, int shouldErase) {
 		eraseTetrimino(tetrimino);
 	}
 
+	int shouldAdjustForTSpinTriple = tSpinTripleIsPossible(tetrimino, direction);
+
 	if (direction == -1) { // The rotation array keeps track of rotation shifts for clockwise movement, so we have to shift back one rotation state before rotating
 		tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
 	}
@@ -272,6 +314,13 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction, int shouldErase) {
 
 	if (direction == 1) { // Clockwise rotation means we add to the state after making the rotation
 		tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
+	}
+
+	if (shouldAdjustForTSpinTriple == 0) {
+		eraseTetrimino(tetrimino);
+		shiftTetrimino(tetrimino, -1*direction, 3);
+		drawTetrimino(tetrimino);
+		return;
 	}
 
 	// Sometimes, a rotation would make pieces collide with other pieces or a wall. This is an attempt to make some "smart" rotation logic, where a rotation against the wall will
@@ -507,7 +556,7 @@ int preventRotationCollision(Tetrimino* tetrimino, int direction) { // We draw i
 	if (blocked == 0) {
 		return 0;
 	}
-	
+
 	if (movementBlocked(tetrimino, -1*direction*TILE_SIZE, 0, 1) == 0) { // Shift once away from the wall
 		shiftTetrimino(tetrimino, -1*direction, 0);
 		return 0;

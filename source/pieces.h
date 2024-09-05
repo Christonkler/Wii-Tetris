@@ -30,6 +30,8 @@ void resetShadowPosition(Tetrimino* realPiece, Tetrimino* shadow);
 
 void moveShadow(Tetrimino* realPiece, Tetrimino* shadow);
 
+void shiftTetrimino(Tetrimino* tetrimino, int xDirection, int yDirection);
+
 u32 I_COLOR = 0xABCDEF12;
 u32 L_COLOR = 0xFF0000FF;
 u32 J_COLOR = 0xFF34567;
