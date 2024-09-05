@@ -118,6 +118,16 @@ int positionInBounds(int xPosition, int yPosition) { // Checks if a position is 
 }
 
 
+int shadowIntersectsPiece(Tetrimino* tetrimino, Tile* shadow) {
+	for (int i = 0; i < 4; i++) {
+		if ((tetrimino->tiles[i].xPosition == shadow->xPosition) && (tetrimino->tiles[i].yPosition == shadow->yPosition)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+
 void drawTetrimino(Tetrimino* tetrimino) { // Helper function to draw all 4 pieces of a tetrimino
 	for (int i = 0; i < 4; i++) {
 		drawSquare(tetrimino->tiles[i].xPosition, tetrimino->tiles[i].yPosition, TILE_SIZE, tetrimino->color);
@@ -128,9 +138,9 @@ void drawTetrimino(Tetrimino* tetrimino) { // Helper function to draw all 4 piec
 void drawShadow(Tetrimino* tetrimino, Tetrimino* shadow) { // Helper function to draw the shadow of a piece
 	for (int i = 0; i < 4; i++) {
 		// This if statement is intended to avoid drawing over the real piece. Somewhere the positions must be getting out of sync?
-		// if (tetrimino->tiles[i].yPosition != shadow->tiles[i].yPosition) {
-			drawBox(shadow->tiles[i].xPosition, shadow->tiles[i].yPosition, TILE_SIZE, WALL_COLOR);
-		// }
+		if (shadowIntersectsPiece(tetrimino, &shadow->tiles[i]) == 0) {
+			drawBox(shadow->tiles[i].xPosition, shadow->tiles[i].yPosition, TILE_SIZE, SHADOW_COLOR);
+		}
 	}
 }
 
@@ -140,6 +150,15 @@ void eraseSquare(int startX, int startY, int squareSize) { // Erases a piece or 
 		drawBox(startX, startY, squareSize, GRID_COLOR);
 	} else {
 		drawSquare(startX, startY, TILE_SIZE, BACKGROUND_COLOR);
+	}
+}
+
+
+void eraseShadow(Tetrimino* realPiece, Tetrimino* shadow) {
+	for (int i = 0; i < 4; i++) {
+		if (shadowIntersectsPiece(realPiece, &shadow->tiles[i]) == 0) {
+			eraseSquare(shadow->tiles[i].xPosition, shadow->tiles[i].yPosition, TILE_SIZE);
+		}
 	}
 }
 
@@ -392,7 +411,7 @@ void initializeTetriminoHeldPiece(Tetrimino* tetrimino) { // Draw the held piece
 
 
 // Swaps the current piece with the held one in the top left corner
-int holdPiece(Tetrimino* currentTetrimino, Tetrimino* heldTetrimino) {
+int holdPiece(Tetrimino* currentTetrimino, Tetrimino* heldTetrimino, Tetrimino* shadowTetrimino) {
 	if (heldTetrimino->shape != ' ') { // != NULL
 		char newHoldShape = currentTetrimino->shape;
 		eraseTetrimino(currentTetrimino);
@@ -401,6 +420,8 @@ int holdPiece(Tetrimino* currentTetrimino, Tetrimino* heldTetrimino) {
 		heldTetrimino->shape = newHoldShape;
 		initializeTetrimino(currentTetrimino);
 		initializeTetriminoHeldPiece(heldTetrimino);
+		moveShadow(currentTetrimino, shadowTetrimino);
+		// drawShadow(currentTetrimino, shadowTetrimino);
 		return 0;
 	} else {
 		eraseTetrimino(currentTetrimino);
@@ -418,7 +439,7 @@ int movementBlocked(Tetrimino* tetrimino, int xPositionChange, int yPositionChan
 	for (int i = 0; i < 4; i++) {
 		newXPosition = tetrimino->tiles[i].xPosition + xPositionChange;
 		newYPosition = tetrimino->tiles[i].yPosition + yPositionChange;
-		if ((xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != BACKGROUND_COLOR) && (xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != GRID_COLOR)) {
+		if ((xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != BACKGROUND_COLOR) && (xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != GRID_COLOR) && (xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != SHADOW_COLOR)) {
 			if (notRotating == 0) { // TODO: Find a more elegant solution for this. We erase when rotating but not when moving
 				int notBlocked = 0;
 				for (int j = 0; j < 4; j++) {
@@ -494,27 +515,27 @@ int preventRotationCollision(Tetrimino* tetrimino, int direction) { // We draw i
 }
 
 
-// Intended to determine if we should draw the shadow. This kind of works, but something breaks when rotating near the bottom
+// Intended to determine if we should draw the shadow. No fucking idea why getting rid of this breaks erasing the piece and shadow when holding the first piece
 int shouldDrawShadow(Tetrimino* realPiece, Tetrimino* shadow) {
-	if ((((shadow->xPosition == leftX) || shadow->xPosition == leftX + TILE_SIZE ) && (shadow->yPosition == bottomY)) && movementBlocked(realPiece, 0, 2*TILE_SIZE, 0) == 0 && movementBlocked(realPiece, 0, 4*TILE_SIZE, 0) == 0 && movementBlocked(realPiece, 0, 6*TILE_SIZE, 0) == 0) {
-		int blockedNumber = 0;
-		for (int i = 0; i < 3; i++) {
-			if (movementBlocked(realPiece, 0, 2*i*TILE_SIZE, 0) != 0) { // Don't draw the shadow when the stack is really tall
-				blockedNumber++;
-				break;
-			}
-		}
-		if (blockedNumber == 0) {
-			for (int i = 0; i < 4; i++) {
-				if (realPiece->yPosition > shadow->yPosition) { // Don't draw the shadow above the real piece
-					return 1;
-				}
-			}
-			return 0;
-		}
-	}
+	// if ((((shadow->xPosition == leftX) || shadow->xPosition == leftX + TILE_SIZE ) && (shadow->yPosition == bottomY)) && movementBlocked(realPiece, 0, 2*TILE_SIZE, 0) == 0 && movementBlocked(realPiece, 0, 4*TILE_SIZE, 0) == 0 && movementBlocked(realPiece, 0, 6*TILE_SIZE, 0) == 0) {
+	// 	int blockedNumber = 0;
+	// 	for (int i = 0; i < 3; i++) {
+	// 		if (movementBlocked(realPiece, 0, 2*i*TILE_SIZE, 0) != 0) { // Don't draw the shadow when the stack is really tall
+	// 			blockedNumber++;
+	// 			break;
+	// 		}
+	// 	}
+	// 	if (blockedNumber == 0) {
+	// 		for (int i = 0; i < 4; i++) {
+	// 			if (realPiece->yPosition > shadow->yPosition) { // Don't draw the shadow above the real piece
+	// 				return 1;
+	// 			}
+	// 		}
+	// 		return 0;
+	// 	}
+	// }
 	for (int i = 0; i < 4; i++) {
-		if ((shadow->tiles[i].xPosition == realPiece->tiles[i].xPosition) && (shadow->tiles[i].yPosition == realPiece->tiles[i].yPosition)) { // Don't draw the shadow over the real piece
+		if (shadowIntersectsPiece(realPiece, &shadow->tiles[i]) != 0) { // Don't draw the shadow over the real piece
 			return 1;
 		}
 	}
@@ -524,9 +545,9 @@ int shouldDrawShadow(Tetrimino* realPiece, Tetrimino* shadow) {
 
 // Move a piece down once. Possibly will update the collision detection and shadow color so we don't have to keep redrawing the shadow piece
 int movePieceGravity(Tetrimino* tetrimino, Tetrimino* shadow) {
-	if ((shouldDrawShadow(tetrimino, shadow) == 0)) {
-		eraseTetrimino(shadow);
-	}
+	// if ((shouldDrawShadow(tetrimino, shadow) == 0)) {
+	// 	eraseShadow(tetrimino, shadow);
+	// }
 	if ((tetrimino->yPosition > 470-TILE_SIZE) || movementBlocked(tetrimino, 0, 2*TILE_SIZE, 0) != 0) { // Bottom of screen is 480
 		return 1;
 	}
@@ -534,13 +555,14 @@ int movePieceGravity(Tetrimino* tetrimino, Tetrimino* shadow) {
 	for (int i = 0; i < 4; i++) {
 		moveTile(&tetrimino->tiles[i], 0, 2*TILE_SIZE);
 	}
+	
+	if (shouldDrawShadow(tetrimino, shadow) == 0) {
+		drawShadow(tetrimino, shadow);
+	}
 	drawTetrimino(tetrimino);
 	tetrimino->yPosition += 2*TILE_SIZE;
 	tetrimino->bottom += 2*TILE_SIZE;
 	lockTimeStart = current_timestamp(); // If the piece was able to drop down one space, extend the lockout timer
-	if (shouldDrawShadow(tetrimino, shadow) == 0) {
-		drawShadow(tetrimino, shadow);
-	}
 	return 0;
 }
 
@@ -593,13 +615,13 @@ void resetShadowPosition(Tetrimino* realPiece, Tetrimino* shadow) {
 
 // Move the shadow to the top of the stack starting at the new position of the tetrimino
 void moveShadow(Tetrimino* realPiece, Tetrimino* shadow) {
-	if ((shouldDrawShadow(realPiece, shadow) == 0)) {
-		eraseTetrimino(shadow); // Erase it while we know where the shadow is
+	// if ((shouldDrawShadow(realPiece, shadow) == 0)) {
+		eraseShadow(realPiece, shadow); // Erase it while we know where the shadow is
 		resetShadowPosition(realPiece, shadow);
 		dropShadow(shadow); // HARD DROP SHADOW
 		drawShadow(realPiece, shadow);
-		drawTetrimino(realPiece); // This is for when we hold pieces so there isn't flashing
-	}
+	// }
+	drawTetrimino(realPiece); // This is for when we hold pieces so there isn't flashing
 }
 
 
@@ -615,9 +637,11 @@ int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, Tet
 	} else if ((buttonsDown & WPAD_BUTTON_A) && pieceHeld == 0) { // HOLD PIECE
 		pieceHeld++;
 		eraseTetrimino(shadowTetrimino);
-		int result = holdPiece(tetrimino, heldTetrimino);
-		resetShadowPosition(tetrimino, shadowTetrimino); // This erases the original piece we held
-		moveShadow(tetrimino, shadowTetrimino);
+		int result = holdPiece(tetrimino, heldTetrimino, shadowTetrimino);
+		// resetShadowPosition(tetrimino, shadowTetrimino);
+		// moveShadow(tetrimino, shadowTetrimino);
+		// eraseTetrimino(tetrimino);
+		// eraseTetrimino(shadowTetrimino); // I might be drawing and erasing more than I need to here, but sometimes you've gotta live a little buddy
 		return result;
 	}
 	
@@ -640,11 +664,11 @@ int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, Tet
 	}
 	
 	if (buttonsDown & WPAD_BUTTON_2) { // ROTATE RIGHT
-		eraseTetrimino(shadowTetrimino); // Erasing here is likely not necessary, but at this point I'm too afraid to try.
+		eraseShadow(tetrimino, shadowTetrimino); // Erasing here is likely not necessary, but at this point I'm too afraid to try.
 		rotateTetrimino(tetrimino, 1, 0);
 		moveShadow(tetrimino, shadowTetrimino);
 	} else if (buttonsDown & WPAD_BUTTON_1) { // ROTATE LEFT
-		eraseTetrimino(shadowTetrimino);
+		eraseShadow(tetrimino, shadowTetrimino);
 		rotateTetrimino(tetrimino, -1, 0);
 		moveShadow(tetrimino, shadowTetrimino);
 	}

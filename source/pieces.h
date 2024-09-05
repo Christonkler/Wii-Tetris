@@ -25,6 +25,10 @@ int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, Tet
 
 int preventRotationCollision(Tetrimino* tetrimino, int direction);
 
+void resetShadowPosition(Tetrimino* realPiece, Tetrimino* shadow);
+
+void moveShadow(Tetrimino* realPiece, Tetrimino* shadow);
+
 u32 I_COLOR = 0xABCDEF12;
 u32 L_COLOR = 0xFF0000FF;
 u32 J_COLOR = 0xFF34567;
@@ -35,6 +39,7 @@ u32 Z_COLOR = 0x108010FF;
 u32 BACKGROUND_COLOR = 0x10801080;
 u32 GRID_COLOR = 0x18801080;
 u32 WALL_COLOR = 0xFFFFFF88;
+u32 SHADOW_COLOR = 0x12345678;
 int TILE_SIZE = 8;
 
 int T_ROTATIONS[] = {1,-4, 0,-2, 1,0, -1,0,  1,2, 0,0, -1,2, -1,-2,  -1,2, 0,0, -1,-2, 1,-2,  -1,0, 0,2, 1,0, 1,4};
