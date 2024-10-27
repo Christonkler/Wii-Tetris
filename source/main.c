@@ -1089,6 +1089,7 @@ int main() {
 						WPAD_ScanPads();
 						buttonsDown = WPAD_ButtonsDown(0);
 						if (buttonsDown & WPAD_BUTTON_2) {
+							totalLinesCleared = 0;
 							return main();
 						} else if (buttonsDown & WPAD_BUTTON_B) {
 							return 0;
