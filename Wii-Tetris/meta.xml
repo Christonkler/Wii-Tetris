@@ -6,6 +6,6 @@
 <release_date>20240426220000</release_date>
 <short_description>Tetris Clone</short_description>
 <long_description>Tetris for Wii.
-Controls: Hold the wiimote sideways. Press + to start the game and pause, D-Pad to move pieces, 1 and 2 rotate, A to hold a piece, and B to hard drop.</long_description>
+Controls: Hold the wiimote sideways. Use the D-Pad to move pieces, 1 and 2 rotate, A to hold a piece, and B to hard drop. Press + to pause at any time, and Home to quit.</long_description>
 <ahb_access/>
 </app>

@@ -19,6 +19,9 @@ static int bottomY = 100;
 static int pieceHeld = 0;
 static long long lastButtonPress = 0;
 static long long lockTimeStart = 0;
+static int lineMultiplier = 1; // T Spins are worth double the number of lines, so this variable keeps track of when to use that
+static int totalLinesCleared = 0;
+
 //int bottomLeftGridX = leftX - 3*TILE_SIZE;
 //int bottomLeftGridY = bottomY + 19*2*TILE_SIZE;
 //WPAD_BUTTON_2=0x0001
@@ -59,6 +62,28 @@ void initializeGraphics() { // This resets the graphics. What this does exactly 
 	VIDEO_Flush();
 	VIDEO_WaitVSync();
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
+}
+
+
+// TODO: Give bonus for All Clear and back to back
+int calculateScore(int linesCleared) {
+	if (linesCleared == 0) {
+		return 0;
+	}
+	int level = (totalLinesCleared/10);
+	switch (linesCleared) {
+		case 1:
+			return 100*lineMultiplier * level;
+		case 2:
+			return 300*lineMultiplier * level;
+		case 3:
+			return 500*lineMultiplier * level;
+		case 4:
+			return 800 * level; // Can't get a T Spin Tetris
+		default:
+			printf("ALERT! THE GAME IS BROKEN AND CHRIS IS NOT A GOOD CODER. THIS IS NOT A DRILL\n");
+			return 0;
+	}
 }
 
 
@@ -116,7 +141,7 @@ int tSpinTripleIsPossible(Tetrimino* tetrimino, int direction) {
 	if (isIgnoredColor(xfb[((tileCoveringHoleY + 2*2*TILE_SIZE) * rmode->fbWidth)/2 + tileCoveringHoleX + direction*TILE_SIZE]) != 0) {
 		return 1;
 	}
-
+	lineMultiplier = 2;
 	return 0;
 }
 
@@ -571,11 +596,12 @@ int preventRotationCollision(Tetrimino* tetrimino, int direction) { // We draw i
 		return 0;
 	} else if (movementBlocked(tetrimino, 1*direction*TILE_SIZE, 1*2*TILE_SIZE, 1) == 0) { // Essentially T Spin Doubles
 		shiftTetrimino(tetrimino, 1*direction, 1);
+		lineMultiplier = 2;
 		return 0;
 	} else if (movementBlocked(tetrimino, -1*direction*TILE_SIZE, 1*2*TILE_SIZE, 1) == 0) {
 		shiftTetrimino(tetrimino, -1*direction, 1);
 		return 0;
-	// TODO: Implement T Spin Triples
+	// TODO: Implement T Spin Triples, but not in the yucky yucky way I have done it already
 	} else { // We couldn't find a way to resolve this rotation, so you can't rotate
 		return 1;
 	}
@@ -1011,7 +1037,8 @@ int main() {
 	moveShadow(&currentTetrimino, &shadowTetrimino); // This is intended to drop the shadow to the bottom right away before anything else, but it doesn't work
 	
 	u16 buttonsDown;
-	int linesCleared = 0;
+	int linesCleared;
+	int score = 0;
 	sleep(1);
 	
 	long long start = current_timestamp();
@@ -1029,8 +1056,8 @@ int main() {
 			WPAD_ScanPads();
 			buttonsDown = WPAD_ButtonsDown(0);
 		} else if (buttonsDown & WPAD_BUTTON_HOME) { // Check for quit
-			printf("Total lines cleared: %d\n", linesCleared);
-			printf("Level achieved: %d\n", 1 + linesCleared/10);
+			printf("Total lines cleared: %d\n", totalLinesCleared);
+			printf("Level achieved: %d\n", 1 + totalLinesCleared/10);
 			sleep(5); // Give a chance to see results before quitting
 			return 0;
 		}
@@ -1040,16 +1067,22 @@ int main() {
 			// Yes, I know the nested if looks a little weird. If it's a hard drop, it's time to get a new piece. movePieceGravity lowers the piece, so it's in a different
 			// state than before, then the lockTimeout tells us if that shift was to the bottom and it's time to lock the piece so we can get a new piece.
 			if (((shouldShiftQueue != 0)) || ((movePieceGravity(&currentTetrimino, &shadowTetrimino) != 0) && (current_timestamp() - lockTimeStart > lockTimeout))) {
-				linesCleared += clearLines(&currentTetrimino); // A piece was placed, so we need to check for cleared lines
-				interval = 200 - (10* (linesCleared/10)); // Every 10 lines the speed increases
+				linesCleared = clearLines(&currentTetrimino); // A piece was placed, so we need to check for cleared lines
+				score += calculateScore(linesCleared);
+				totalLinesCleared += linesCleared;
+				lineMultiplier = 1;
+
+				interval = 200 - (10* (totalLinesCleared/10)); // Every 10 lines the speed increases
 				lockTimeout = interval < 50 ? 150 : interval*3; // The lock timeout is also kind of dependent on the number of lines cleared
 				shiftQueue(&currentTetrimino, &nextTetrimino1, &nextTetrimino2, &nextTetrimino3, &nextTetrimino4, select_and_remove(my_characters, &size));
 				resetShadowPosition(&currentTetrimino, &shadowTetrimino);
 				moveShadow(&currentTetrimino, &shadowTetrimino);
 				pieceHeld = 0; // Since a piece was placed, we can now hold another one if we want
 				if (movementBlocked(&currentTetrimino, 0, 2*TILE_SIZE, 0) != 0) { // Check for gameover.
-					printf("Total lines cleared: %d\n", linesCleared);
-					printf("Level achieved: %d\n", 1 + linesCleared/10); // Integer division rounds down
+					// TODO: Save high scores
+					printf("Total score: %d\n", score);
+					printf("Total lines cleared: %d\n", totalLinesCleared);
+					printf("Level achieved: %d\n", 1 + totalLinesCleared/10); // Integer division rounds down
 					printf("Press 2 to play again, or press B to quit.\n");
 					sleep(1);
 					while (1) {
@@ -1068,8 +1101,8 @@ int main() {
 		}
 	}
 	// Probably don't need these last 4 lines, but they aren't hurting anybody!
-	printf("Total lines cleared: %d\n", linesCleared);
-	printf("Level achieved: %d\n", 1 + linesCleared/10);
+	printf("Total lines cleared: %d\n", totalLinesCleared);
+	printf("Level achieved: %d\n", 1 + totalLinesCleared/10);
 	sleep(5);
  
 	return 0;
