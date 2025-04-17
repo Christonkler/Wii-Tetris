@@ -73,13 +73,13 @@ int calculateScore(int linesCleared) {
 	int level = (totalLinesCleared/10);
 	switch (linesCleared) {
 		case 1:
-			return 100*lineMultiplier * level;
+			return 100 + (100 * lineMultiplier * level);
 		case 2:
-			return 300*lineMultiplier * level;
+			return 300 + (300 * lineMultiplier * level);
 		case 3:
-			return 500*lineMultiplier * level;
+			return 500 + (500 * lineMultiplier * level);
 		case 4:
-			return 800 * level; // Can't get a T Spin Tetris
+			return 800 + (800 * level); // Can't get a T Spin Tetris
 		default:
 			printf("ALERT! THE GAME IS BROKEN AND CHRIS IS NOT A GOOD CODER. THIS IS NOT A DRILL\n");
 			return 0;
@@ -984,6 +984,62 @@ int run_tests() {
 }
 
 
+void drawDisplaySegment(int topLeftX, int topLeftY, int segment, int isLit) { // TODO: Improve the font. There is something with the Y values being doubled that's causing issues
+	u32 color;
+	if (isLit) {
+		color = WALL_COLOR;
+	} else {
+		color = BACKGROUND_COLOR;
+	}
+
+	if (segment % 3 == 0) { // horizontal
+		int xStart = topLeftX + TILE_SIZE/2;
+		int yStart = (int)((segment/2.0)*TILE_SIZE + topLeftY);
+		drawSquare(xStart, yStart, TILE_SIZE/2, color);
+		drawSquare(xStart + TILE_SIZE/2, yStart, TILE_SIZE/2, color);
+
+	} else { // vertical
+		int xStart = topLeftX + (((segment % 3) - 1) * 1.5*TILE_SIZE); // 1 mod 3 => left side, 2 mod 3 => right side
+
+		int yStart; // Not sure of a formula for this one yet
+		if (segment < 3) {
+			yStart = topLeftY + TILE_SIZE/2;
+		} else {
+			yStart = topLeftY + 2*TILE_SIZE;
+		}
+
+		drawSquare(xStart, yStart, TILE_SIZE/2, color);
+		drawSquare(xStart, yStart + TILE_SIZE/2, TILE_SIZE/2, color);
+	}
+}
+
+
+void drawDigit(int digit, int startX, int startY) {
+	for (int i = 0; i < 7; i ++) {
+		drawDisplaySegment(startX, startY, i, DIGIT_DISPLAY[digit][i]);
+	}
+}
+
+
+void drawScore(int digits[]) {
+	int topLeftY = bottomY + 24*TILE_SIZE; // TODO: Get good location for score
+	for (int i = 0; i < DISPLAYED_DIGITS; i++) {
+		drawDigit(digits[i], i*2.5*TILE_SIZE, topLeftY);
+	}
+}
+
+
+void displayScore(int score) {
+	// Get the last 6 digits of the score. Currently, there's no chance of getting to 1 million
+	int digits[DISPLAYED_DIGITS];
+	for (int i = 0; i < DISPLAYED_DIGITS; i++) {
+		digits[5-i] = score%10;
+		score /=10;
+	}
+	drawScore(digits);
+}
+
+
 
 
 
@@ -991,7 +1047,7 @@ int run_tests() {
 
 int main() {
 	initializeGraphics();
-	printf("Press + to start.");
+	printf("Press + to start.\n");
 	initializeWalls();
 	initializeGrid();
 	startScreen();
@@ -1069,11 +1125,12 @@ int main() {
 			if (((shouldShiftQueue != 0)) || ((movePieceGravity(&currentTetrimino, &shadowTetrimino) != 0) && (current_timestamp() - lockTimeStart > lockTimeout))) {
 				linesCleared = clearLines(&currentTetrimino); // A piece was placed, so we need to check for cleared lines
 				score += calculateScore(linesCleared);
+				displayScore(score); // TODO: Only draw the score if it has changed
 				totalLinesCleared += linesCleared;
 				lineMultiplier = 1;
 
 				interval = 200 - (10* (totalLinesCleared/10)); // Every 10 lines the speed increases
-				lockTimeout = interval < 50 ? 150 : interval*3; // The lock timeout is also kind of dependent on the number of lines cleared
+				lockTimeout = 500; // The lock timeout is also kind of dependent on the number of lines cleared
 				shiftQueue(&currentTetrimino, &nextTetrimino1, &nextTetrimino2, &nextTetrimino3, &nextTetrimino4, select_and_remove(my_characters, &size));
 				resetShadowPosition(&currentTetrimino, &shadowTetrimino);
 				moveShadow(&currentTetrimino, &shadowTetrimino);
