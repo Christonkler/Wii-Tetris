@@ -577,7 +577,6 @@ int movementBlocked(Tetrimino* tetrimino, int xPositionChange, int yPositionChan
 		newXPosition = tetrimino->tiles[i].xPosition + xPositionChange;
 		newYPosition = tetrimino->tiles[i].yPosition + yPositionChange;
 		if (isIgnoredColor(xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition])) {
-		// if ((xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != BACKGROUND_COLOR) && (xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != GRID_COLOR) && (xfb[(newYPosition * rmode->fbWidth)/2 + newXPosition] != SHADOW_COLOR)) {
 			if (notRotating == 0) { // TODO: Find a more elegant solution for this. We erase when rotating but not when moving
 				int notBlocked = 0;
 				for (int j = 0; j < 4; j++) {
@@ -883,7 +882,7 @@ int isGameOver(Tetrimino* currentTetrimino, long long gameStartTime) {
 		case SPRINT_MODE: 
 			return totalLinesCleared >= 40;
 		case SCORE_MODE:
-			return (current_timestamp() - gameStartTime) > (1*10*1000); // 3 minutes
+			return (current_timestamp() - gameStartTime) > (3*60*1000); // 3 minutes
 		default:
 			return 0;
 	}
