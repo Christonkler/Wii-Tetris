@@ -21,6 +21,8 @@ static long long lastButtonPress = 0;
 static long long lockTimeStart = 0;
 static int lineMultiplier = 1; // T Spins are worth double the number of lines, so this variable keeps track of when to use that
 static int totalLinesCleared = 0;
+static int gameMode = ENDLESS_MODE;
+static u32 MODIFIABLE_GRID_COLOR = GRID_COLOR;
 
 //int bottomLeftGridX = leftX - 3*TILE_SIZE;
 //int bottomLeftGridY = bottomY + 19*2*TILE_SIZE;
@@ -117,6 +119,31 @@ void drawSquare(int startX, int startY, int squareSize, u32 color) { // This dra
 }
 
 
+void drawTriangle(Tile* tile, u32 color) { // Pointer for selecting options in menus
+	int width[] = {1, 2, 3, 2, 1};
+	for (int y = tile->yPosition; y < tile->yPosition + 5; y++) {
+		for (int x = tile->xPosition; x < tile->xPosition + width[y - tile->yPosition]; x++) {
+			// Calculate the framebuffer index for this pixel
+			int index = (y * rmode->fbWidth)/2 + x;
+			xfb[index] = color;
+		}
+	}
+}
+
+
+void eraseTriangle(Tile* tile) {
+	drawTriangle(tile, BACKGROUND_COLOR);
+}
+
+
+void moveTriangle(Tile* tile, int xShift, int yShift) {
+	eraseTriangle(tile);
+	tile->xPosition += xShift;
+	tile->yPosition += yShift;
+	drawTriangle(tile, WALL_COLOR);
+}
+
+
 void drawBox(int startX, int startY, int squareSize, u32 color) { // This is used for drawing the grid in the play area and the piece shadow
 	drawSquare(startX, startY, squareSize, color); // Draw the box color, then draw the black inside of that square so that it looks like a grid
 	drawSquare(startX+1, startY+2, squareSize - 2, BACKGROUND_COLOR);
@@ -138,7 +165,7 @@ void initializeWalls() { // Draw the walls to bound the playing field
 void initializeGrid() { // Draw the grid in the playing field
 	for (int i = -1; i < 20; i++) {
 		for (int j = 0; j < 10; j++) {
-			drawBox(leftX + (-3 + j)*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, GRID_COLOR);
+			drawBox(leftX + (-3 + j)*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, MODIFIABLE_GRID_COLOR);
 		}
 	}
 }
@@ -238,7 +265,7 @@ void drawShadow(Tetrimino* tetrimino, Tetrimino* shadow) { // Helper function to
 
 void eraseSquare(int startX, int startY, int squareSize) { // Erases a piece or shadow
 	if (positionInBounds(startX, startY)) { // Grids go inbounds, black boxes go out of bounds
-		drawBox(startX, startY, squareSize, GRID_COLOR);
+		drawBox(startX, startY, squareSize, MODIFIABLE_GRID_COLOR);
 	} else {
 		drawSquare(startX, startY, TILE_SIZE, BACKGROUND_COLOR);
 	}
@@ -267,7 +294,7 @@ int countTilesInRow(int yPosition) { // This is used to check if a line should b
 	int index;
 	for (int i = 0; i < 10; i++) {
 		index = (yPosition * rmode->fbWidth)/2 + (startX + i*TILE_SIZE);
-		if ((xfb[index] != BACKGROUND_COLOR) && (xfb[index] != GRID_COLOR)) {
+		if ((xfb[index] != BACKGROUND_COLOR) && (xfb[index] != MODIFIABLE_GRID_COLOR)) {
 			filledSpaces++;
 		}
 	}
@@ -282,7 +309,7 @@ void shiftLine(int yPosition) { // This is used in clearing lines
 	int index;
 	for (int i = 0; i < 10; i++) { // Copy the row above to the current row
 		index = (yAbove * rmode->fbWidth)/2 + (startX + i*TILE_SIZE);
-		if (xfb[index] == GRID_COLOR || xfb[index] == BACKGROUND_COLOR) { // GRID_COLOR or BACKGROUND_COLOR => Grid, so we draw another grid in current row
+		if (xfb[index] == MODIFIABLE_GRID_COLOR || xfb[index] == BACKGROUND_COLOR) { // GRID_COLOR or BACKGROUND_COLOR => Grid, so we draw another grid in current row
 			drawBox((startX + i*TILE_SIZE), yPosition, TILE_SIZE, xfb[index]);
 		} else {
 			drawSquare((startX + i*TILE_SIZE), yPosition, TILE_SIZE, xfb[index]);
@@ -592,7 +619,7 @@ void shiftTetrimino(Tetrimino* tetrimino, int xDirection, int yDirection) {
 int preventRotationCollision(Tetrimino* tetrimino, int direction) { // We draw if this returns 0. tetrimino has already been erased.
 	int blocked = 0;
 	for (int i = 0; i < 4; i++) { // The background and the grid colors mean the space is empty. I probably have a function somewhere that would do this for me...
-		if ((xfb[(tetrimino->tiles[i].yPosition * rmode->fbWidth)/2 + tetrimino->tiles[i].xPosition] != BACKGROUND_COLOR) && (xfb[(tetrimino->tiles[i].yPosition * rmode->fbWidth)/2 + tetrimino->tiles[i].xPosition] != GRID_COLOR)) {
+		if ((xfb[(tetrimino->tiles[i].yPosition * rmode->fbWidth)/2 + tetrimino->tiles[i].xPosition] != BACKGROUND_COLOR) && (xfb[(tetrimino->tiles[i].yPosition * rmode->fbWidth)/2 + tetrimino->tiles[i].xPosition] != MODIFIABLE_GRID_COLOR)) {
 			blocked = 1;
 		}
 	}
@@ -712,19 +739,19 @@ int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, Tet
 		return result;
 	}
 	
-	if (((buttonsDown & WPAD_BUTTON_UP) || ((buttonsHeld & WPAD_BUTTON_UP) && (current_timestamp() - lastButtonPress > 120))) && (movementBlocked(tetrimino, -1*TILE_SIZE, 0, 0) == 0)) {  // LEFT
+	if (((buttonsDown & WPAD_BUTTON_UP) || ((buttonsHeld & WPAD_BUTTON_UP) && (current_timestamp() - lastButtonPress > 100))) && (movementBlocked(tetrimino, -1*TILE_SIZE, 0, 0) == 0)) {  // LEFT
 		eraseTetrimino(tetrimino);
 		shiftTetrimino(tetrimino, -1, 0);
 		moveShadow(tetrimino, shadowTetrimino);
 		lastButtonPress = current_timestamp();
-	} else if (((buttonsDown & WPAD_BUTTON_DOWN) || ((buttonsHeld & WPAD_BUTTON_DOWN) && (current_timestamp() - lastButtonPress > 120))) && (movementBlocked(tetrimino, TILE_SIZE, 0, 0) == 0)) { // RIGHT
+	} else if (((buttonsDown & WPAD_BUTTON_DOWN) || ((buttonsHeld & WPAD_BUTTON_DOWN) && (current_timestamp() - lastButtonPress > 100))) && (movementBlocked(tetrimino, TILE_SIZE, 0, 0) == 0)) { // RIGHT
 		eraseTetrimino(tetrimino);
 		shiftTetrimino(tetrimino, 1, 0);
 		moveShadow(tetrimino, shadowTetrimino);
 		lastButtonPress = current_timestamp();
 	}
 	
-	if ((buttonsDown & WPAD_BUTTON_LEFT || ((buttonsHeld & WPAD_BUTTON_LEFT) && (current_timestamp() - lastButtonPress > 120))) && (movementBlocked(tetrimino, 0, 2*TILE_SIZE, 0) == 0)) { // DOWN
+	if ((buttonsDown & WPAD_BUTTON_LEFT || ((buttonsHeld & WPAD_BUTTON_LEFT) && (current_timestamp() - lastButtonPress > 100))) && (movementBlocked(tetrimino, 0, 2*TILE_SIZE, 0) == 0)) { // DOWN
 		movePieceGravity(tetrimino, shadowTetrimino);
 		drawTetrimino(tetrimino);
 		lastButtonPress = current_timestamp();
@@ -804,16 +831,103 @@ void shiftQueue(Tetrimino* currentTetrimino, Tetrimino* nextTetrimino1, Tetrimin
 }
 
 
+// TODO: Select speed, and move some modes into modifiers for other modes, like invisible
 // Don't start the game until the player presses +
 void startScreen() {
 	u16 buttonsDown;
+	Tile triangle;
+	triangle.xPosition = 5;
+	triangle.yPosition = 40;
+	drawTriangle(&triangle, WALL_COLOR);
+	printf("Select Mode:\n");
+	printf("Endless\n"); // Play until you top out
+	printf("40 Line Sprint\n"); // Clear 40 lines as fast as possible
+	printf("Score Attack\n"); // Achieve the highest score within 3 minutes
+	printf("The One Piece\n"); // Only 1 random piece provided. Might allow choosing the piece in the future
+	printf("Cheese Race\n"); // Clear the garbage and place a piece on the bottom as quickly as possible
+	printf("Tetris Only\n"); // Only tetris line clears allowed. Anything short of a tetris will result in a game over
+	printf("Color Blind\n"); // The pieces are all the same color. Might make another mode where the pieces have random colors too
+	printf("Invisible\n"); // The pieces are invisible once placed. The shadows are visible as normal
+	printf("Lotka-Volterra\n"); // Each level cleared removes 1 piece from circulation. Once 1 piece is left, the next level clear will add a piece back into circulatoin
 	while(1) {
 		WPAD_ScanPads();
-		buttonsDown = WPAD_ButtonsDown(0);
+		buttonsDown = WPAD_ButtonsDown(0); // Could also use pointer controls to select mode in the future
 		if (buttonsDown & WPAD_BUTTON_PLUS) {
 			break;
 		}
+
+		if (buttonsDown & WPAD_BUTTON_B) { // Debugging
+			printf("X Position: %d Y Position: %d\n", triangle.xPosition, triangle.yPosition);
+		}
+		
+		if (buttonsDown & WPAD_BUTTON_LEFT) { // Down
+			moveTriangle(&triangle, 0, 16);
+			lastButtonPress = current_timestamp();
+		}
+		else if (buttonsDown & WPAD_BUTTON_RIGHT) { // Up
+			moveTriangle(&triangle, 0, -16);
+			lastButtonPress = current_timestamp();
+		}
 	}
+	gameMode = triangle.yPosition;
+	eraseTriangle(&triangle);
+}
+
+
+
+int isGameOver(Tetrimino* currentTetrimino, long long gameStartTime) {
+	if (movementBlocked(currentTetrimino, 0, 2*TILE_SIZE, 0) != 0) {
+		return 1;
+	}
+	switch (gameMode)  {
+		case SPRINT_MODE: 
+			return totalLinesCleared >= 40;
+		case SCORE_MODE:
+			return (current_timestamp() - gameStartTime) > (1*10*1000); // 3 minutes
+		default:
+			return 0;
+	}
+	return 0;
+}
+
+
+
+void printStats(long long gameStartTime) {
+	long long elapsedTime = current_timestamp() - gameStartTime;
+	long long minutes = elapsedTime / 60000;  // 1 minute = 60000 milliseconds
+	long long seconds = (elapsedTime % 60000) / 1000;  // 1 second = 1000 milliseconds
+	long long milliseconds = elapsedTime % 1000;
+
+	switch (gameMode)  {
+		case SPRINT_MODE: 
+			printf("Play time: %lld:%lld.%lld\n", minutes, seconds, milliseconds);
+			printf("Total lines cleared: %d\n", totalLinesCleared);
+			break;
+		case SCORE_MODE:
+			printf("Total lines cleared: %d\n", totalLinesCleared);
+			printf("Level achieved: %d\n", 1 + totalLinesCleared/10); // Integer division rounds down
+			break;
+		case INVISIBLE_MODE: // Reset the colors to the proper ones
+			I_COLOR = 0xABCDEF12;
+			L_COLOR = 0xFF0000FF;
+			J_COLOR = 0xFF34567;
+			T_COLOR = 0x00FF00FF;
+			S_COLOR = 0xFF00FF00;
+			O_COLOR = 0xFF00FFFF;
+			Z_COLOR = 0x108010FF;
+			MODIFIABLE_GRID_COLOR = GRID_COLOR;
+			printf("Time survived: %lld:%lld\n", minutes, seconds);
+			printf("Total lines cleared: %d\n", totalLinesCleared);
+			printf("Level achieved: %d\n", 1 + totalLinesCleared/10); // Integer division rounds down
+			break;
+		default:
+			printf("Play time: %lld:%lld\n", minutes, seconds);
+			printf("Total lines cleared: %d\n", totalLinesCleared);
+			printf("Level achieved: %d\n", 1 + totalLinesCleared/10); // Integer division rounds down
+			break;
+	}
+	printf("Press 2 to play again, or press B to quit.\n");
+
 }
 
 
@@ -1001,11 +1115,21 @@ int run_tests() {
 
 int main() {
 	initializeGraphics();
-	printf("Press + to start.\n");
-	initializeWalls();
-	initializeGrid();
+	// printf("Press + to start.\n");
+	// initializeWalls();
+	// initializeGrid();
 	// displayScore(88888888); // Used to test the font for the score
 	startScreen();
+	if (gameMode == INVISIBLE_MODE) { // Collision checks for == BACKGROUND_COLOR, so these will blend in well
+		I_COLOR = BACKGROUND_COLOR + 1;
+		L_COLOR = BACKGROUND_COLOR + 1;
+		J_COLOR = BACKGROUND_COLOR + 1;
+		T_COLOR = BACKGROUND_COLOR + 1;
+		S_COLOR = BACKGROUND_COLOR + 1;
+		O_COLOR = BACKGROUND_COLOR + 1;
+		Z_COLOR = BACKGROUND_COLOR + 1;
+		MODIFIABLE_GRID_COLOR = BACKGROUND_COLOR;
+	}
 
 	initializeGraphics(); // Because I don't know if there's a way to reset the terminal after printing, I just reset the whole thing. It works
 	initializeWalls();
@@ -1050,10 +1174,12 @@ int main() {
 	
 	u16 buttonsDown;
 	int linesCleared;
+	totalLinesCleared = 0;
 	int score = 0;
 	sleep(1);
 	
-	long long start = current_timestamp();
+	long long lastFrame = current_timestamp();
+	long long gameStartTime = current_timestamp();
 	while(1) {
 		WPAD_ScanPads();
 		buttonsDown = WPAD_ButtonsDown(0);
@@ -1075,7 +1201,7 @@ int main() {
 		}
 
 		int shouldShiftQueue = moveTetriminoButtonPress(&currentTetrimino, &heldTetrimino, &shadowTetrimino, buttonsDown); // Did a hard drop occur?
-		if ((shouldShiftQueue != 0) || (current_timestamp() - start > interval)) { // if (hard drop || time to lower piece once)
+		if ((shouldShiftQueue != 0) || (current_timestamp() - lastFrame > interval)) { // if (hard drop || time to lower piece once)
 			// Yes, I know the nested if looks a little weird. If it's a hard drop, it's time to get a new piece. movePieceGravity lowers the piece, so it's in a different
 			// state than before, then the lockTimeout tells us if that shift was to the bottom and it's time to lock the piece so we can get a new piece.
 			if (((shouldShiftQueue != 0)) || ((movePieceGravity(&currentTetrimino, &shadowTetrimino) != 0) && (current_timestamp() - lockTimeStart > lockTimeout))) {
@@ -1091,18 +1217,14 @@ int main() {
 				resetShadowPosition(&currentTetrimino, &shadowTetrimino);
 				moveShadow(&currentTetrimino, &shadowTetrimino);
 				pieceHeld = 0; // Since a piece was placed, we can now hold another one if we want
-				if (movementBlocked(&currentTetrimino, 0, 2*TILE_SIZE, 0) != 0) { // Check for gameover.
+				if (isGameOver(&currentTetrimino, gameStartTime)) { // Check for gameover.
 					// TODO: Save high scores
-					printf("Total score: %d\n", score);
-					printf("Total lines cleared: %d\n", totalLinesCleared);
-					printf("Level achieved: %d\n", 1 + totalLinesCleared/10); // Integer division rounds down
-					printf("Press 2 to play again, or press B to quit.\n");
+					printStats(gameStartTime);
 					sleep(1);
 					while (1) {
 						WPAD_ScanPads();
 						buttonsDown = WPAD_ButtonsDown(0);
 						if (buttonsDown & WPAD_BUTTON_2) {
-							totalLinesCleared = 0;
 							return main();
 						} else if (buttonsDown & WPAD_BUTTON_B) {
 							return 0;
@@ -1111,7 +1233,7 @@ int main() {
 					return 0;
 				}
 			}
-			start = current_timestamp();
+			lastFrame = current_timestamp();
 		}
 	}
 	// Probably don't need these last 4 lines, but they aren't hurting anybody!

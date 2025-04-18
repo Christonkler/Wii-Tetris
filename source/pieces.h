@@ -83,3 +83,15 @@ int DIGIT_DISPLAY[10][7] = {
     {1,1,1,1,0,1,1}   // DISPLAY_9
 };
 int DISPLAYED_DIGITS = 6; // 999,999 is the current max displayable score, then it would have to reset
+
+
+// Technically, you could just use an array and track the position in it, but using the y positions is a lot funnier to me. It also might make implementing pointer controls for mode selection simpler
+const int ENDLESS_MODE = 40;
+const int SPRINT_MODE = 56;
+const int SCORE_MODE = 72;
+const int ONE_PIECE_MODE = 88;
+const int CHEESE_RACE_MODE = 104;
+const int TETRIS_MODE = 120;
+const int COLOR_BLIND_MODE = 136;
+const int INVISIBLE_MODE = 152;
+const int LV_MODE = 168;
