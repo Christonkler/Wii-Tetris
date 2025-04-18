@@ -79,7 +79,7 @@ int calculateScore(int linesCleared) {
 		case 3:
 			return 500 + (500 * lineMultiplier * level);
 		case 4:
-			return 800 + (800 * level); // Can't get a T Spin Tetris
+			return 800 + (800 * lineMultiplier * level);
 		default:
 			printf("ALERT! THE GAME IS BROKEN AND CHRIS IS NOT A GOOD CODER. THIS IS NOT A DRILL\n");
 			return 0;
@@ -104,47 +104,6 @@ int isIgnoredColor(u32 color) {
 	}
 	return 1;
 }
-
-
-// This is extremely custom code purely for handling T Spin Triples. Thog don't care.
-int tSpinTripleIsPossible(Tetrimino* tetrimino, int direction) {
-	// Verify it's a T piece and is in the correct rotation state
-	if (tetrimino->shape != 'T' || tetrimino->rotationState != 0) {
-		return 1;
-	}
-
-	int tileCoveringHoleX;
-	int tileCoveringHoleY;
-
-	// Rotating clockwise => Overhang on left. Rotating counter clockwise => Overhang on right
-	if (direction == 1) {
-		tileCoveringHoleX = tetrimino->tiles[0].xPosition;
-		tileCoveringHoleY = tetrimino->tiles[0].yPosition;
-	} else {
-		tileCoveringHoleX = tetrimino->tiles[3].xPosition;
-		tileCoveringHoleY = tetrimino->tiles[3].yPosition;
-	}
-
-	// Verify a ceiling is above the hole
-	if (isIgnoredColor(xfb[((tileCoveringHoleY - 2*TILE_SIZE) * rmode->fbWidth)/2 + tileCoveringHoleX]) == 0) {
-		return 1;
-	}
-
-	// Verify the 3 spaces below the ceiling and the piece are empty
-	for (int i = 1; i < 4; i++) {
-		if (isIgnoredColor(xfb[((tileCoveringHoleY + 2*i*TILE_SIZE) * rmode->fbWidth)/2 + tileCoveringHoleX]) != 0) {
-			return 1;
-		}
-	}
-
-	// Check the part of the T piece that's sticking out
-	if (isIgnoredColor(xfb[((tileCoveringHoleY + 2*2*TILE_SIZE) * rmode->fbWidth)/2 + tileCoveringHoleX + direction*TILE_SIZE]) != 0) {
-		return 1;
-	}
-	lineMultiplier = 2;
-	return 0;
-}
-
 
 
 void drawSquare(int startX, int startY, int squareSize, u32 color) { // This draws a solid box at a given position. This is used for drawing tetriminos, the walls, and erasing outside the playing field
@@ -182,6 +141,62 @@ void initializeGrid() { // Draw the grid in the playing field
 			drawBox(leftX + (-3 + j)*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, GRID_COLOR);
 		}
 	}
+}
+
+
+void drawDisplaySegment(int topLeftX, int topLeftY, int segment, int isLit) { // TODO: Improve the font. Doubling the Y values that get added does make a more standard 7 segment display, but I think it looks better without that
+	u32 color;
+	if (isLit) {
+		color = WALL_COLOR;
+	} else {
+		color = BACKGROUND_COLOR;
+	}
+
+	if (segment % 3 == 0) { // horizontal
+		int xStart = topLeftX + TILE_SIZE/2;
+		int yStart = (int)((segment/2.0)*TILE_SIZE + topLeftY);
+		drawSquare(xStart, yStart, TILE_SIZE/2, color);
+		drawSquare(xStart + TILE_SIZE/2, yStart, TILE_SIZE/2, color);
+
+	} else { // vertical
+		int xStart = topLeftX + (((segment % 3) - 1) * 1.5*TILE_SIZE); // 1 mod 3 => left side, 2 mod 3 => right side
+
+		int yStart; // Not sure of a formula for this one yet
+		if (segment < 3) {
+			yStart = topLeftY + TILE_SIZE/2;
+		} else {
+			yStart = topLeftY + 2*TILE_SIZE;
+		}
+
+		drawSquare(xStart, yStart, TILE_SIZE/2, color);
+		drawSquare(xStart, yStart + TILE_SIZE/2, TILE_SIZE/2, color);
+	}
+}
+
+
+void drawDigit(int digit, int startX, int startY) {
+	for (int i = 0; i < 7; i ++) {
+		drawDisplaySegment(startX, startY, i, DIGIT_DISPLAY[digit][i]);
+	}
+}
+
+
+void drawScore(int digits[]) {
+	int topLeftY = bottomY + 24*TILE_SIZE; // TODO: Get good location for score
+	for (int i = 0; i < DISPLAYED_DIGITS; i++) {
+		drawDigit(digits[i], i*2.5*TILE_SIZE, topLeftY);
+	}
+}
+
+
+void displayScore(int score) {
+	// Get the last 6 digits of the score. Currently, there's no chance of getting to 1 million
+	int digits[DISPLAYED_DIGITS];
+	for (int i = 0; i < DISPLAYED_DIGITS; i++) {
+		digits[5-i] = score%10;
+		score /=10;
+	}
+	drawScore(digits);
 }
 
 
@@ -287,8 +302,21 @@ void shiftLines(int yPosition) { // Used for shifting all the lines
 
 
 
+// Sometimes rotations will lower the piece 
+int findBottomOfTetrimino(Tetrimino* tetrimino) {
+	int bottom = tetrimino->tiles[0].yPosition;
+	for (int i = 1; i < 4; i++) {
+		if (tetrimino->tiles[i].yPosition > bottom) {
+			bottom = tetrimino->tiles[i].yPosition;
+		}
+	}
+	return bottom;
+}
+
+
+
 int clearLines(Tetrimino* tetrimino) { // Can clear lines when a piece is placed
-	int currentYPosition = tetrimino->bottom;
+	int currentYPosition = findBottomOfTetrimino(tetrimino);
 	int linesCleared = 0;
 	int tilesInRow = countTilesInRow(currentYPosition); // tilesInRow = 0 => Nothing is in the row, so we don't have to check anything
 	while (tilesInRow != 0 && linesCleared < 4) { // You can't clear any more than 4 lines with one piece, so we don't need to check for line clears after clearing 4
@@ -326,10 +354,8 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction, int shouldErase) {
 		eraseTetrimino(tetrimino);
 	}
 
-	int shouldAdjustForTSpinTriple = tSpinTripleIsPossible(tetrimino, direction);
-
 	if (direction == -1) { // The rotation array keeps track of rotation shifts for clockwise movement, so we have to shift back one rotation state before rotating
-		tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4;
+		tetrimino->rotationState = (tetrimino->rotationState - 1 + 4) % 4; // Add 4 before taking the mod to avoid negatives
 	}
 
 	for (int i = 0; i < 8; i+=2) {
@@ -339,13 +365,6 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction, int shouldErase) {
 
 	if (direction == 1) { // Clockwise rotation means we add to the state after making the rotation
 		tetrimino->rotationState = (tetrimino->rotationState + 1 + 4) % 4;
-	}
-
-	if (shouldAdjustForTSpinTriple == 0) {
-		eraseTetrimino(tetrimino);
-		shiftTetrimino(tetrimino, -1*direction, 3);
-		drawTetrimino(tetrimino);
-		return;
 	}
 
 	// Sometimes, a rotation would make pieces collide with other pieces or a wall. This is an attempt to make some "smart" rotation logic, where a rotation against the wall will
@@ -582,29 +601,25 @@ int preventRotationCollision(Tetrimino* tetrimino, int direction) { // We draw i
 		return 0;
 	}
 
-	if (movementBlocked(tetrimino, -1*direction*TILE_SIZE, 0, 1) == 0) { // Shift once away from the wall
-		shiftTetrimino(tetrimino, -1*direction, 0);
-		return 0;
-	} else if (movementBlocked(tetrimino, direction*TILE_SIZE, 0, 1) == 0) { // Shift once towards the wall. Not sure if this would actually work
-		shiftTetrimino(tetrimino, 1*direction, 0);
-		return 0;
-	} else if (movementBlocked(tetrimino, -2*direction*TILE_SIZE, 0, 1) == 0) { // Same thing but 2 spaces instead
-		shiftTetrimino(tetrimino, -2*direction, 0);
-		return 0;
-	} else if (movementBlocked(tetrimino, 2*direction*TILE_SIZE, 0, 1) == 0) {
-		shiftTetrimino(tetrimino, 2*direction, 0);
-		return 0;
-	} else if (movementBlocked(tetrimino, 1*direction*TILE_SIZE, 1*2*TILE_SIZE, 1) == 0) { // Essentially T Spin Doubles
-		shiftTetrimino(tetrimino, 1*direction, 1);
-		lineMultiplier = 2;
-		return 0;
-	} else if (movementBlocked(tetrimino, -1*direction*TILE_SIZE, 1*2*TILE_SIZE, 1) == 0) {
-		shiftTetrimino(tetrimino, -1*direction, 1);
-		return 0;
-	// TODO: Implement T Spin Triples, but not in the yucky yucky way I have done it already
-	} else { // We couldn't find a way to resolve this rotation, so you can't rotate
-		return 1;
+	int wallKickFirstTestPosition;
+	if (direction == 1) {
+		wallKickFirstTestPosition = ((tetrimino->rotationState + 4 - 1) % 4)*8; // +4 to avoid negatives. Might not matter here
+	} else {
+		wallKickFirstTestPosition = (tetrimino->rotationState)*8;
 	}
+	// TODO: Fix collision check
+	for (int i = 0; i < 4; i++) { // Positive Y values in the wall kick array means up, while positive Y values in frame buffer mean down
+		if ((tetrimino->shape != 'I') && (movementBlocked(tetrimino, direction*WALL_KICK[wallKickFirstTestPosition + 2*i]*TILE_SIZE, -1*direction*WALL_KICK[wallKickFirstTestPosition + 2*i + 1]*2*TILE_SIZE, 1) == 0)) {
+			shiftTetrimino(tetrimino, direction*WALL_KICK[wallKickFirstTestPosition + 2*i], -1*direction*WALL_KICK[wallKickFirstTestPosition + 2*i + 1]);
+			lineMultiplier = i/3 + 1; // integer division rounds down. The multiplier is for T spin bonus points. Need to find a new solution to this as doubles don't double score as expected
+			return 0;
+		} else if ((tetrimino->shape == 'I') && (movementBlocked(tetrimino, direction*I_WALL_KICK[wallKickFirstTestPosition + 2*i]*TILE_SIZE, -1*direction*I_WALL_KICK[wallKickFirstTestPosition + 2*i + 1]*2*TILE_SIZE, 1) == 0)) { 
+			shiftTetrimino(tetrimino, direction*I_WALL_KICK[wallKickFirstTestPosition + 2*i], -1*direction*I_WALL_KICK[wallKickFirstTestPosition + 2*i + 1]);
+			lineMultiplier = i/3 + 1;
+			return 0;
+		}
+	}
+	return 1;
 }
 
 // Move a piece down once. Possibly will update the collision detection and shadow color so we don't have to keep redrawing the shadow piece
@@ -984,72 +999,12 @@ int run_tests() {
 }
 
 
-void drawDisplaySegment(int topLeftX, int topLeftY, int segment, int isLit) { // TODO: Improve the font. There is something with the Y values being doubled that's causing issues
-	u32 color;
-	if (isLit) {
-		color = WALL_COLOR;
-	} else {
-		color = BACKGROUND_COLOR;
-	}
-
-	if (segment % 3 == 0) { // horizontal
-		int xStart = topLeftX + TILE_SIZE/2;
-		int yStart = (int)((segment/2.0)*TILE_SIZE + topLeftY);
-		drawSquare(xStart, yStart, TILE_SIZE/2, color);
-		drawSquare(xStart + TILE_SIZE/2, yStart, TILE_SIZE/2, color);
-
-	} else { // vertical
-		int xStart = topLeftX + (((segment % 3) - 1) * 1.5*TILE_SIZE); // 1 mod 3 => left side, 2 mod 3 => right side
-
-		int yStart; // Not sure of a formula for this one yet
-		if (segment < 3) {
-			yStart = topLeftY + TILE_SIZE/2;
-		} else {
-			yStart = topLeftY + 2*TILE_SIZE;
-		}
-
-		drawSquare(xStart, yStart, TILE_SIZE/2, color);
-		drawSquare(xStart, yStart + TILE_SIZE/2, TILE_SIZE/2, color);
-	}
-}
-
-
-void drawDigit(int digit, int startX, int startY) {
-	for (int i = 0; i < 7; i ++) {
-		drawDisplaySegment(startX, startY, i, DIGIT_DISPLAY[digit][i]);
-	}
-}
-
-
-void drawScore(int digits[]) {
-	int topLeftY = bottomY + 24*TILE_SIZE; // TODO: Get good location for score
-	for (int i = 0; i < DISPLAYED_DIGITS; i++) {
-		drawDigit(digits[i], i*2.5*TILE_SIZE, topLeftY);
-	}
-}
-
-
-void displayScore(int score) {
-	// Get the last 6 digits of the score. Currently, there's no chance of getting to 1 million
-	int digits[DISPLAYED_DIGITS];
-	for (int i = 0; i < DISPLAYED_DIGITS; i++) {
-		digits[5-i] = score%10;
-		score /=10;
-	}
-	drawScore(digits);
-}
-
-
-
-
-
-
-
 int main() {
 	initializeGraphics();
 	printf("Press + to start.\n");
 	initializeWalls();
 	initializeGrid();
+	// displayScore(88888888); // Used to test the font for the score
 	startScreen();
 
 	initializeGraphics(); // Because I don't know if there's a way to reset the terminal after printing, I just reset the whole thing. It works
@@ -1062,6 +1017,7 @@ int main() {
 		sleep(1);
 		return 1;
 	}
+	displayScore(0);
 	
 	rand(); // Honestly not sure what this is for
 	

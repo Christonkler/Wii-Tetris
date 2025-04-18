@@ -56,26 +56,19 @@ const u32 GRID_COLOR = 0x18801080;
 u32 WALL_COLOR = 0xFFFFFF88;
 int TILE_SIZE = 8;
 
-int T_ROTATIONS[] = {1,-4, 0,-2, 1,0, -1,0,   1,2, 0,0, -1,2, -1,-2,  -1,2, 0,0, -1,-2, 1,-2,   -1,0, 0,2, 1,0, 1,4};
+// I'm emotionally attached to my original rotation array
+// int T_ROTATIONS[] = {1,-4, 0,-2, 1,0, -1,0,   1,2, 0,0, -1,2, -1,-2,  -1,2, 0,0, -1,-2, 1,-2,   -1,0, 0,2, 1,0, 1,4};
+int T_ROTATIONS[] = {1,-2, 0,0, 1,2, -1,2,    1,2, 0,0, -1,2, -1,-2,  -1,2, 0,0, -1,-2, 1,-2,   -1,-2, 0,0, 1,-2, 1,2};
 int L_ROTATIONS[] = {1,-4, 0,-2, -1,0, 0,2,   2,2, 1,0, 0,-2, -1,0,   -1,2, 0,0, 1,-2, 0,-4,    -2,0, -1,2, 0,4, 1,2};
 int J_ROTATIONS[] = {1,-4, 2,-2, 0,-2, -1,0,  1,2, 0,4, 0,0, -1,-2,   -1,2, -2,0, 0,0, 1,-2,    -1,0, 0,-2, 0,2, 1,4};
 int S_ROTATIONS[] = {1,-4, 0,-2, 1,0, 0,2,    1,2, 0,0, -1,2, -2,0,   -1,2, 0,0, -1,-2, 0,-4,   -1,0, 0,2, 1,0, 2,2};
 int Z_ROTATIONS[] = {2,-2, 0,-2, 1,0, -1,0,   0,4, 0,0, -1,2, -1,-2,  -2,0, 0,0, -1,-2, 1,-2,    0,-2, 0,2, 1,0, 1,4};
 int I_ROTATIONS[] = {2,-6, 1,-4, 0,-2, -1,0,  1,6, 0,4, -1,2, -2,0,   -2,0, -1,-2, 0,-4, 1,-6,  -1,0, 0,2, 1,4, 2,6};
 
-const u32 IGNORED_COLORS[] = {BACKGROUND_COLOR, GRID_COLOR, I_SHADOW, L_SHADOW, J_SHADOW, T_SHADOW, S_SHADOW, O_SHADOW, Z_SHADOW};
+int WALL_KICK[] = {-1,0, -1,1, 0,-2, -1,-2,    1,0, 1,-1, 0,2, 1,2,     1,0, 1,1, 0,-2, 1,-2,     -1,0, -1,-1, 0,2, -1,2};
+int I_WALL_KICK[] = {-2,0, 1,0, -2,-1, 1,2,     -1,0, 2,0, -1,2, 2,-1,     2,0, -1,0, 2,1, -1,-2,    1,0, -2,0, 1,-2, -2,1};
 
-// int DISPLAY_0[7] = {1,1,1,0,1,1,1};
-// int DISPLAY_1[7] = {0,0,1,0,0,1,0};
-// int DISPLAY_2[7] = {1,0,1,1,1,0,1};
-// int DISPLAY_3[7] = {1,0,1,1,0,1,1};
-// int DISPLAY_4[7] = {0,1,1,1,0,1,0};
-// int DISPLAY_5[7] = {1,1,0,1,0,1,1};
-// int DISPLAY_6[7] = {1,1,0,1,1,1,1};
-// int DISPLAY_7[7] = {1,0,1,0,0,1,0};
-// int DISPLAY_8[7] = {1,1,1,1,1,1,1};
-// int DISPLAY_9[7] = {1,1,1,1,0,1,1};
-// int DISPLAY_LIST[10][7] = {DISPLAY_0,DISPLAY_1,DISPLAY_2,DISPLAY_3,DISPLAY_4,DISPLAY_5,DISPLAY_6,DISPLAY_7,DISPLAY_8,DISPLAY_9};
+const u32 IGNORED_COLORS[] = {BACKGROUND_COLOR, GRID_COLOR, I_SHADOW, L_SHADOW, J_SHADOW, T_SHADOW, S_SHADOW, O_SHADOW, Z_SHADOW};
 
 int DIGIT_DISPLAY[10][7] = {
     {1,1,1,0,1,1,1},  // DISPLAY_0
@@ -90,4 +83,3 @@ int DIGIT_DISPLAY[10][7] = {
     {1,1,1,1,0,1,1}   // DISPLAY_9
 };
 int DISPLAYED_DIGITS = 6; // 999,999 is the current max displayable score, then it would have to reset
-// int displayTopLeftX = 
