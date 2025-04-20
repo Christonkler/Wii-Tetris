@@ -2,10 +2,22 @@
 <app version="1.1.0">
 <name>Wii Tetris</name>
 <coder>Christonkler</coder>
-<version>1.1.0</version>
-<release_date>20240426220000</release_date>
-<short_description>Tetris Clone</short_description>
+<version>1.3.0</version>
+<release_date>20250418150000</release_date>
+<short_description>Tetris</short_description>
 <long_description>Tetris for Wii.
-Controls: Hold the wiimote sideways. Use the D-Pad to move pieces, 1 and 2 rotate, A to hold a piece, and B to hard drop. Press + to pause at any time, and Home to quit.</long_description>
+Controls: Hold the wiimote sideways. Use the D-Pad to move pieces, 1 and 2 rotate, A to hold a piece, and B to hard drop. Press + to pause at any time, and Home to quit.
+Game Modes:
+	- Endless: Survive for as long as you can as the pieces start to fall faster
+	- 40 Line Sprint: Clear 40 lines as fast as possible.
+	- Score Attack: Earn the highest score within 3 minutes.
+	- The One Piece: [NOT IMPLEMENTED YET] Survive for as long as you can using only one random piece shape.
+	- Cheese Race: [NOT IMPLEMENTED YET] Clear the garbage lines AKA Swiss Cheese and place a piece at the bottom as fast as possible
+	- Tetris Only: Clearing anything less than a tetris results in a game over.
+	- Color Blind: [NOT COMPLETE] The pieces are all a random color. -- Shadows are not the same color, and the queued pieces don't look right
+	- Invisible: Survive as long as you can without seeing any of the pieces.
+	- Lotka-Volterra:[NOT IMPLEMENTED YET] Survive as long as possible. Each level removes a piece shape until only 1 is remaining, then the pieces start coming back and the cycle repeats.
+Selecting a game mode that has not been implemented yet defaults the rules to endless mode.
+</long_description>
 <ahb_access/>
 </app>

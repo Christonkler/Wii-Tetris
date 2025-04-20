@@ -23,6 +23,8 @@ static int lineMultiplier = 1; // T Spins are worth double the number of lines, 
 static int totalLinesCleared = 0;
 static int gameMode = ENDLESS_MODE;
 static u32 MODIFIABLE_GRID_COLOR = GRID_COLOR;
+static int level = 1;
+static int score = 0;
 
 //int bottomLeftGridX = leftX - 3*TILE_SIZE;
 //int bottomLeftGridY = bottomY + 19*2*TILE_SIZE;
@@ -72,16 +74,15 @@ int calculateScore(int linesCleared) {
 	if (linesCleared == 0) {
 		return 0;
 	}
-	int level = (totalLinesCleared/10);
 	switch (linesCleared) {
 		case 1:
-			return 100 + (100 * lineMultiplier * level);
+			return 100 * lineMultiplier * level;
 		case 2:
-			return 300 + (300 * lineMultiplier * level);
+			return 300 * lineMultiplier * level;
 		case 3:
-			return 500 + (500 * lineMultiplier * level);
+			return 500 * lineMultiplier * level;
 		case 4:
-			return 800 + (800 * lineMultiplier * level);
+			return 800 * level; // Can't get a T-Spin Tetris
 		default:
 			printf("ALERT! THE GAME IS BROKEN AND CHRIS IS NOT A GOOD CODER. THIS IS NOT A DRILL\n");
 			return 0;
@@ -151,7 +152,7 @@ void drawBox(int startX, int startY, int squareSize, u32 color) { // This is use
 
 
 void initializeWalls() { // Draw the walls to bound the playing field
-	for (int i = -1; i < 20; i++) {
+	for (int i = -3; i < 20; i++) {
 		drawSquare(leftX-4*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, WALL_COLOR);
 		drawSquare(leftX+7*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, WALL_COLOR);
 	}
@@ -163,7 +164,7 @@ void initializeWalls() { // Draw the walls to bound the playing field
 
 
 void initializeGrid() { // Draw the grid in the playing field
-	for (int i = -1; i < 20; i++) {
+	for (int i = -3; i < 20; i++) {
 		for (int j = 0; j < 10; j++) {
 			drawBox(leftX + (-3 + j)*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, MODIFIABLE_GRID_COLOR);
 		}
@@ -230,7 +231,7 @@ void displayScore(int score) {
 int positionInBounds(int xPosition, int yPosition) { // Checks if a position is inbounds. This is mainly used for erasing so we know if we should draw a grid or black box
 	int leftBound = leftX - 3*TILE_SIZE;
 	int rightBound = leftX + 6*TILE_SIZE;
-	int upperBound = bottomY - 1*2*TILE_SIZE;
+	int upperBound = bottomY - 3*2*TILE_SIZE;
 	int lowerBound = bottomY + 19*2*TILE_SIZE;
 	return (leftBound <= xPosition) && (xPosition <= rightBound) && (upperBound <= yPosition) && (yPosition <= lowerBound);
 }
@@ -406,10 +407,22 @@ void rotateTetrimino(Tetrimino* tetrimino, int direction, int shouldErase) {
 
 // Draws a tetrimino in its intial rotation state somewhere. The position of the 0th tetrimino has always been the bottom left of the tetrimino, so those bounds are passed into this function
 void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bottomYBound) {
+	u32 randomColor = BACKGROUND_COLOR;
+	if (gameMode == COLOR_BLIND_MODE) {
+		srand(time(NULL));
+		randomColor = ((u32)rand() << 16) | (u32)rand();
+		if (randomColor == BACKGROUND_COLOR || randomColor == GRID_COLOR) {
+			randomColor += 1;
+		}
+	}
 	tetrimino->rotationState=0;
 	switch(tetrimino->shape) {
 		case 'I':
-			tetrimino -> color = I_COLOR;
+			if (gameMode == COLOR_BLIND_MODE) { // TODO: Make the random shadow ignorable. This genius collision system is proving to be Minnesota interesting
+				tetrimino -> color = randomColor;
+			} else {
+				tetrimino -> color = I_COLOR;
+			}
 			tetrimino -> shadowColor = I_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, I_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
@@ -426,6 +439,11 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			break;
 		
 		case 'L':
+			if (gameMode == COLOR_BLIND_MODE) {
+				tetrimino -> color = randomColor;
+			} else {
+				tetrimino -> color = L_COLOR;
+			}
 			tetrimino -> color = L_COLOR;
 			tetrimino -> shadowColor = L_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, L_COLOR};
@@ -443,7 +461,11 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			break;
 		
 		case 'O':
-			tetrimino -> color = O_COLOR;
+			if (gameMode == COLOR_BLIND_MODE) {
+				tetrimino -> color = randomColor;
+			} else {
+				tetrimino -> color = O_COLOR;
+			}
 			tetrimino -> shadowColor = O_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound+TILE_SIZE, bottomYBound, O_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
@@ -459,7 +481,11 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			break;
 		
 		case 'T':
-			tetrimino -> color = T_COLOR;
+			if (gameMode == COLOR_BLIND_MODE) {
+				tetrimino -> color = randomColor;
+			} else {
+				tetrimino -> color = T_COLOR;
+			}
 			tetrimino -> shadowColor = T_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, T_COLOR};
 			drawSquare(tetrimino->tiles[0].xPosition, tetrimino->tiles[0].yPosition, TILE_SIZE, tetrimino->tiles[0].color);
@@ -476,6 +502,11 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			break;
 		
 		case 'S':
+			if (gameMode == COLOR_BLIND_MODE) {
+				tetrimino -> color = randomColor;
+			} else {
+				tetrimino -> color = S_COLOR;
+			}
 			tetrimino -> color = S_COLOR;
 			tetrimino -> shadowColor = S_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, S_COLOR};
@@ -493,6 +524,11 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			break;
 		
 		case 'J':
+			if (gameMode == COLOR_BLIND_MODE) {
+				tetrimino -> color = randomColor;
+			} else {
+				tetrimino -> color = J_COLOR;
+			}
 			tetrimino -> color = J_COLOR;
 			tetrimino -> shadowColor = J_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound, J_COLOR};
@@ -510,6 +546,11 @@ void initializeTetriminoSetPosition(Tetrimino* tetrimino, int leftXBound, int bo
 			break;
 		
 		case 'Z':
+			if (gameMode == COLOR_BLIND_MODE) {
+				tetrimino -> color = randomColor;
+			} else {
+				tetrimino -> color = Z_COLOR;
+			}
 			tetrimino -> color = Z_COLOR;
 			tetrimino -> shadowColor = Z_SHADOW;
 			tetrimino->tiles[0] = (Tile){leftXBound, bottomYBound-2*TILE_SIZE, Z_COLOR};
@@ -637,11 +678,12 @@ int preventRotationCollision(Tetrimino* tetrimino, int direction) { // We draw i
 	for (int i = 0; i < 4; i++) { // Positive Y values in the wall kick array means up, while positive Y values in frame buffer mean down
 		if ((tetrimino->shape != 'I') && (movementBlocked(tetrimino, direction*WALL_KICK[wallKickFirstTestPosition + 2*i]*TILE_SIZE, -1*direction*WALL_KICK[wallKickFirstTestPosition + 2*i + 1]*2*TILE_SIZE, 1) == 0)) {
 			shiftTetrimino(tetrimino, direction*WALL_KICK[wallKickFirstTestPosition + 2*i], -1*direction*WALL_KICK[wallKickFirstTestPosition + 2*i + 1]);
-			lineMultiplier = i/3 + 1; // integer division rounds down. The multiplier is for T spin bonus points. Need to find a new solution to this as doubles don't double score as expected
+			if (tetrimino->shape == 'T') { // T spins give bonus points
+				lineMultiplier = 2;
+			}
 			return 0;
 		} else if ((tetrimino->shape == 'I') && (movementBlocked(tetrimino, direction*I_WALL_KICK[wallKickFirstTestPosition + 2*i]*TILE_SIZE, -1*direction*I_WALL_KICK[wallKickFirstTestPosition + 2*i + 1]*2*TILE_SIZE, 1) == 0)) { 
 			shiftTetrimino(tetrimino, direction*I_WALL_KICK[wallKickFirstTestPosition + 2*i], -1*direction*I_WALL_KICK[wallKickFirstTestPosition + 2*i + 1]);
-			lineMultiplier = i/3 + 1;
 			return 0;
 		}
 	}
@@ -683,6 +725,7 @@ int lowerShadow(Tetrimino* shadow) {
 // Move the tetrimino to the top of the stack
 void hardDrop(Tetrimino* tetrimino, Tetrimino* shadow) {
 	while (1) {
+		score += 2*level;
 		if (movePieceGravity(tetrimino, shadow) == 1) {
 			break;
 		}
@@ -751,6 +794,8 @@ int moveTetriminoButtonPress(Tetrimino* tetrimino, Tetrimino* heldTetrimino, Tet
 	}
 	
 	if ((buttonsDown & WPAD_BUTTON_LEFT || ((buttonsHeld & WPAD_BUTTON_LEFT) && (current_timestamp() - lastButtonPress > 100))) && (movementBlocked(tetrimino, 0, 2*TILE_SIZE, 0) == 0)) { // DOWN
+		score += 1*level;
+		displayScore(score);
 		movePieceGravity(tetrimino, shadowTetrimino);
 		drawTetrimino(tetrimino);
 		lastButtonPress = current_timestamp();
@@ -845,7 +890,7 @@ void startScreen() {
 	printf("The One Piece\n"); // Only 1 random piece provided. Might allow choosing the piece in the future
 	printf("Cheese Race\n"); // Clear the garbage and place a piece on the bottom as quickly as possible
 	printf("Tetris Only\n"); // Only tetris line clears allowed. Anything short of a tetris will result in a game over
-	printf("Color Blind\n"); // The pieces are all the same color. Might make another mode where the pieces have random colors too
+	printf("Color Blind\n"); // The pieces are all a random color
 	printf("Invisible\n"); // The pieces are invisible once placed. The shadows are visible as normal
 	printf("Lotka-Volterra\n"); // Each level cleared removes 1 piece from circulation. Once 1 piece is left, the next level clear will add a piece back into circulatoin
 	while(1) {
@@ -883,6 +928,8 @@ int isGameOver(Tetrimino* currentTetrimino, long long gameStartTime) {
 			return totalLinesCleared >= 40;
 		case SCORE_MODE:
 			return (current_timestamp() - gameStartTime) > (3*60*1000); // 3 minutes
+		case TETRIS_MODE:
+			return (totalLinesCleared % 4 != 0);
 		default:
 			return 0;
 	}
@@ -925,8 +972,8 @@ void printStats(long long gameStartTime) {
 			printf("Level achieved: %d\n", 1 + totalLinesCleared/10); // Integer division rounds down
 			break;
 	}
-	printf("Press 2 to play again, or press B to quit.\n");
-
+	printf("\nPress 2 to play again\n");
+	printf("Press B to quit\n");
 }
 
 
@@ -1144,7 +1191,7 @@ int main() {
 	
 	rand(); // Honestly not sure what this is for
 	
-    double interval = 200;
+    double interval = 800;
 	double lockTimeout = interval*3;
 	char my_characters[] = {'T', 'O', 'S', 'Z', 'L', 'J', 'I'};
 	int size = 7;
@@ -1174,7 +1221,7 @@ int main() {
 	u16 buttonsDown;
 	int linesCleared;
 	totalLinesCleared = 0;
-	int score = 0;
+	// int score = 0;
 	sleep(1);
 	
 	long long lastFrame = current_timestamp();
@@ -1210,8 +1257,10 @@ int main() {
 				totalLinesCleared += linesCleared;
 				lineMultiplier = 1;
 
-				interval = 200 - (10* (totalLinesCleared/10)); // Every 10 lines the speed increases
-				lockTimeout = 500; // The lock timeout is also kind of dependent on the number of lines cleared
+				// TODO: Balance this better
+				level = totalLinesCleared/10 + 1;
+				interval = 800 - (40 * level); // Every 10 lines the speed increases
+				lockTimeout = 500; // The lock timeout was dependent on the level, but I'm thinking it makes sense for it to be static for now
 				shiftQueue(&currentTetrimino, &nextTetrimino1, &nextTetrimino2, &nextTetrimino3, &nextTetrimino4, select_and_remove(my_characters, &size));
 				resetShadowPosition(&currentTetrimino, &shadowTetrimino);
 				moveShadow(&currentTetrimino, &shadowTetrimino);
