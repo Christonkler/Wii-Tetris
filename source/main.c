@@ -172,6 +172,19 @@ void initializeGrid() { // Draw the grid in the playing field
 }
 
 
+// Fill in red where there was a block after game over
+void revealInvisiblePieces() {
+	for (int i = -3; i < 20; i++) {
+		for (int j = 0; j < 10; j++) {
+			int index = (((bottomY + i*2*TILE_SIZE) * rmode->fbWidth)/2) + (leftX + (-3+j)*TILE_SIZE);
+			if (xfb[index] == (BACKGROUND_COLOR + 1)) {
+				drawSquare(leftX + (-3+j)*TILE_SIZE, bottomY + i*2*TILE_SIZE, TILE_SIZE, 0x108010FF);
+			}
+		}
+	}
+}
+
+
 void drawDisplaySegment(int topLeftX, int topLeftY, int segment, int isLit) { // TODO: Improve the font. Doubling the Y values that get added does make a more standard 7 segment display, but I think it looks better without that
 	u32 color;
 	if (isLit) {
@@ -921,6 +934,9 @@ void startScreen() {
 
 int isGameOver(Tetrimino* currentTetrimino, long long gameStartTime) {
 	if (movementBlocked(currentTetrimino, 0, 2*TILE_SIZE, 0) != 0) {
+		if (gameMode == INVISIBLE_MODE) {
+			revealInvisiblePieces();
+		}
 		return 1;
 	}
 	switch (gameMode)  {
@@ -1221,7 +1237,7 @@ int main() {
 	u16 buttonsDown;
 	int linesCleared;
 	totalLinesCleared = 0;
-	// int score = 0;
+	score = 0;
 	sleep(1);
 	
 	long long lastFrame = current_timestamp();
